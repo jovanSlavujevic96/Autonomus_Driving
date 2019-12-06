@@ -1,4 +1,4 @@
-#include <bachelor/ObjectDetector_node/ImageProcessor.hpp>
+#include <bachelor/ObjectDetectorNode/ImageProcessor.hpp>
 
 #include <cv_bridge/cv_bridge.h> ////x
 

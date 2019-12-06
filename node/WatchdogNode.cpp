@@ -1,4 +1,4 @@
-#include <bachelor/Watchdog_node/Watchdog.hpp>
+#include <bachelor/WatchdogNode/Watchdog.hpp>
 #include <bachelor/DataProtocol/BoolDataReceiver.hpp>
 
 #include <memory>
@@ -9,7 +9,7 @@
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "Watchdog_node");
+    ros::init(argc, argv, "WatchdogNode");
     
     std::unique_ptr<Watchdog> WatchdogObserver = std::make_unique<Watchdog>();
     
@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     const Topics topics[NumOfNodes] = {fromVIDEOPtoWDOG, fromOBJDETtoWDOG, fromTIMERtoWDOG};
     for(int i=0; i<NumOfNodes; ++i)
     {
-        Subject[i] = std::make_unique<BoolDataReceiver>(TopicName(topics[i]) );
+        Subject[i] = std::make_unique<BoolDataReceiver>(TopicName[topics[i]] );
         Subject[i]->registerObserver(WatchdogObserver.get(), topics[i]);
     }
 

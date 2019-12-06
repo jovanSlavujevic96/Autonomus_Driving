@@ -159,6 +159,7 @@ std::vector<cv::Rect> OCR_check(const std::vector<cv::Rect> &samples, cv::Mat &i
             */
         }
     }
+    return tmp;
 }
     
     

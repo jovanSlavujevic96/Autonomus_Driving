@@ -83,22 +83,21 @@ include_directories(
 
 ############################################## VideoPlayer_node
 add_library(_VideoPlayerLib
-  src/VideoPlayer_node/VideoPlayer.cpp
+  src/VideoPlayerNode/VideoPlayer.cpp
   src/DataProtocol/FrameDataEmiter.cpp
   src/DataProtocol/BoolDataEmiter.cpp
   src/DataProtocol/BoolDataReceiver.cpp
-  src/Topics.cpp
 )
 
-add_executable(VideoPlayer_node node/VideoPlayer_node.cpp )
+add_executable(VideoPlayerNode node/VideoPlayerNode.cpp )
 
-target_link_libraries(VideoPlayer_node 
+target_link_libraries(VideoPlayerNode 
   _VideoPlayerLib 
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(VideoPlayer_node 
+add_dependencies(VideoPlayerNode 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}s
 )
@@ -108,20 +107,19 @@ add_library(_ObjectDetectorLib
   src/DataProtocol/BoolDataEmiter.cpp      #Send data to other nodes
   src/DataProtocol/FrameDataReceiver.cpp   #Observer Pattern (subject class)
   src/DataProtocol/FrameDataEmiter.cpp    #Send processed frame to Display node
-  src/ObjectDetector_node/ImageProcessor.cpp  #ImageProcessing 	
-  src/ObjectDetector_node/ObjectDetector.cpp  #main class (observer class)
-  src/Topics.cpp
+  src/ObjectDetectorNode/ImageProcessor.cpp  #ImageProcessing 	
+  src/ObjectDetectorNode/ObjectDetector.cpp  #main class (observer class)
 )
 
-add_executable(ObjectDetector_node node/ObjectDetector_node.cpp ) 
+add_executable(ObjectDetectorNode node/ObjectDetectorNode.cpp ) 
 
-target_link_libraries(ObjectDetector_node 
+target_link_libraries(ObjectDetectorNode 
   _ObjectDetectorLib
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(ObjectDetector_node 
+add_dependencies(ObjectDetectorNode 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}
 )
@@ -129,20 +127,19 @@ add_dependencies(ObjectDetector_node
 ############################################## Timer_node
 
 add_library(_TimerLib
-  src/Timer_node/Timer.cpp
+  src/TimerNode/Timer.cpp
   src/DataProtocol/BoolDataEmiter.cpp
   src/DataProtocol/BoolDataReceiver.cpp
-  src/Topics.cpp
 )
 
-add_executable(Timer_node node/Timer_node.cpp )
+add_executable(TimerNode node/TimerNode.cpp )
 
-target_link_libraries(Timer_node 
+target_link_libraries(TimerNode 
   _TimerLib 
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(Timer_node 
+add_dependencies(TimerNode 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}s
 )
@@ -150,19 +147,18 @@ add_dependencies(Timer_node
 ############################################## Watchdog bash commands
 
 add_library(_WatchdogLib
-  src/Watchdog_node/Watchdog.cpp
+  src/WatchdogNode/Watchdog.cpp
   src/DataProtocol/BoolDataReceiver.cpp
-  src/Topics.cpp
 )
 
-add_executable(Watchdog_node node/Watchdog_node.cpp )
+add_executable(WatchdogNode node/WatchdogNode.cpp )
 
-target_link_libraries(Watchdog_node 
+target_link_libraries(WatchdogNode 
   _WatchdogLib 
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(Watchdog_node 
+add_dependencies(WatchdogNode 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}s 
 )
@@ -170,21 +166,20 @@ add_dependencies(Watchdog_node
 ############################################## Display node
 
 add_library(_DisplayLib
-  src/Display_node/Display.cpp
+  src/DisplayNode/Display.cpp
   src/DataProtocol/FrameDataReceiver.cpp
   src/DataProtocol/BoolDataEmiter.cpp
-  src/Topics.cpp
 )
 
-add_executable(Display_node node/Display_node.cpp )
+add_executable(DisplayNode node/DisplayNode.cpp )
 
-target_link_libraries(Display_node 
+target_link_libraries(DisplayNode 
   _DisplayLib
   ${OpenCV_LIBS}
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(Display_node 
+add_dependencies(DisplayNode 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}s 
 )

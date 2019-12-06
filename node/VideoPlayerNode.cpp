@@ -1,4 +1,4 @@
-#include <bachelor/VideoPlayer_node/VideoPlayer.hpp>
+#include <bachelor/VideoPlayerNode/VideoPlayer.hpp>
 #include <bachelor/DataProtocol/BoolDataReceiver.hpp>
 
 #include <iostream>
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 	cv::VideoCapture videoCap;
 	typeVideo(videoCap, videoName);
 
-	ros::init(argc, argv, "VideoPlayer_node");
+	ros::init(argc, argv, "VideoPlayerNode");
 	
 	std::unique_ptr<VideoPlayer> PlayerObserver = std::make_unique<VideoPlayer>();
 	PlayerObserver->setVideo(videoCap);
@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 	const Topics topics[3] = {fromTIMERtoVIDEOP, fromDISPtoVIDEOP, fromOBJDETtoVIDEOP};
 	for(int i=0; i<3; ++i)
 	{
-		DataSubject[i] = std::make_unique<BoolDataReceiver>(TopicName(topics[i]) );
+		DataSubject[i] = std::make_unique<BoolDataReceiver>(TopicName[topics[i]] );
 		DataSubject[i]->registerObserver(PlayerObserver.get(), topics[i]);
 	}
 

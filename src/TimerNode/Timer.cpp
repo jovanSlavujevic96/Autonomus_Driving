@@ -1,4 +1,4 @@
-#include <bachelor/Timer_node/Timer.hpp>
+#include <bachelor/TimerNode/Timer.hpp>
 #include <bachelor/DataProtocol/BoolDataEmiter.hpp>
 
 #include <iostream>
@@ -31,8 +31,8 @@ bool Timer::Count(void)
 }
 
 Timer::Timer(const unsigned int CountLimit) :
-    m_DataEmiterTimerEnds{std::make_unique<BoolDataEmiter>(TopicName(fromTIMERtoVIDEOP) )}, 
-    m_DataEmiterWatchdog{std::make_unique<BoolDataEmiter>(TopicName(fromTIMERtoWDOG) )},
+    m_DataEmiterTimerEnds{std::make_unique<BoolDataEmiter>(TopicName[fromTIMERtoVIDEOP] )}, 
+    m_DataEmiterWatchdog{std::make_unique<BoolDataEmiter>(TopicName[fromTIMERtoWDOG] )},
     m_TimerIndicator(false), m_Time(CountLimit)
 {
     system("clear"); 

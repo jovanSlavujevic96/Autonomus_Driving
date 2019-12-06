@@ -1,20 +1,20 @@
-#include <bachelor/VideoPlayer_node/VideoPlayer.hpp>
+#include <bachelor/VideoPlayerNode/VideoPlayer.hpp>
 #include <bachelor/DataProtocol/BoolDataEmiter.hpp>
 #include <bachelor/DataProtocol/FrameDataEmiter.hpp>
 #include <cv_bridge/cv_bridge.h>
 
 VideoPlayer::VideoPlayer() :
-	m_FrameEmiter{std::make_unique<FrameDataEmiter>(TopicName(fromVIDEOPtoOBJDET) )},
-	m_TimerStartsEmiter{std::make_unique<BoolDataEmiter>(TopicName(fromVIDEOPtoTIMER) )}, 
-	m_WatchdogEmiter{std::make_unique<BoolDataEmiter>(TopicName(fromVIDEOPtoWDOG) )},
+	m_FrameEmiter{std::make_unique<FrameDataEmiter>(TopicName[fromVIDEOPtoOBJDET] )},
+	m_TimerStartsEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromVIDEOPtoTIMER] )}, 
+	m_WatchdogEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromVIDEOPtoWDOG] )},
 	m_NodeMSG{false}
 {
-	//system("clear");
+	system("clear");
 }
 
 VideoPlayer::~VideoPlayer()
 {
-	//system("clear");
+	system("clear");
 }
 
 bool VideoPlayer::Cycle(void)

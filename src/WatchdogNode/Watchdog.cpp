@@ -1,4 +1,4 @@
-#include <bachelor/Watchdog_node/Watchdog.hpp>
+#include <bachelor/WatchdogNode/Watchdog.hpp>
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
@@ -15,7 +15,7 @@ void Watchdog::initMaps(void)
     for(int i=0; i<NumOfNodes; ++i)
         m_TopicMap[topics[i]] = i;
     
-    const std::string nodes[NumOfNodes] = {"VideoPlayer_node", "ObjectDetector_node", "Timer_node"};
+    const std::string nodes[NumOfNodes] = {"VideoPlayerNode", "ObjectDetectorNode", "TimerNode"};
     for(int i=0; i<NumOfNodes; ++i)
         m_NodeMap[&m_NodeMSG[i]] = nodes[i];
 }

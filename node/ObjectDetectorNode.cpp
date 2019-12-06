@@ -1,4 +1,4 @@
-#include <bachelor/ObjectDetector_node/ObjectDetector.hpp>
+#include <bachelor/ObjectDetectorNode/ObjectDetector.hpp>
 #include <bachelor/DataProtocol/FrameDataReceiver.hpp>
 #include <bachelor/Topics.h>
 
@@ -6,10 +6,10 @@
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "ObjectDetector_node");
+	ros::init(argc, argv, "ObjectDetectorNode");
 	
 	std::unique_ptr<ObjectDetector> ObjDetObserver = std::make_unique<ObjectDetector>();
-	std::unique_ptr<IFrameDataReceiver> FrameRcvSubject = std::make_unique<FrameDataReceiver>(TopicName(fromVIDEOPtoOBJDET) );
+	std::unique_ptr<IFrameDataReceiver> FrameRcvSubject = std::make_unique<FrameDataReceiver>(TopicName[fromVIDEOPtoOBJDET] );
 
 	FrameRcvSubject->registerObserver(ObjDetObserver.get(),fromVIDEOPtoOBJDET );
 

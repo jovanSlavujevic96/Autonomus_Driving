@@ -1,14 +1,14 @@
-#include <bachelor/ObjectDetector_node/ObjectDetector.hpp>
+#include <bachelor/ObjectDetectorNode/ObjectDetector.hpp>
 #include <bachelor/DataProtocol/BoolDataEmiter.hpp>
 #include <bachelor/DataProtocol/FrameDataEmiter.hpp>
-#include <bachelor/ObjectDetector_node/ImageProcessor.hpp>
+#include <bachelor/ObjectDetectorNode/ImageProcessor.hpp>
 
 
 ObjectDetector::ObjectDetector() :	
 	m_ImgProcessor{std::make_unique<ImageProcessor> () },
-	m_DataEmiterWatchdog{std::make_unique<BoolDataEmiter> (TopicName(fromOBJDETtoWDOG) )},
-	m_DataEmiterVideoPlayer{std::make_unique<BoolDataEmiter> (TopicName(fromOBJDETtoVIDEOP) )},
-	m_FrameEmiterDisplay{std::make_unique<FrameDataEmiter>(TopicName(fromOBJDETtoDISP) )}
+	m_DataEmiterWatchdog{std::make_unique<BoolDataEmiter> (TopicName[fromOBJDETtoWDOG] )},
+	m_DataEmiterVideoPlayer{std::make_unique<BoolDataEmiter> (TopicName[fromOBJDETtoVIDEOP] )},
+	m_FrameEmiterDisplay{std::make_unique<FrameDataEmiter>(TopicName[fromOBJDETtoDISP] )}
 {
 
 }
