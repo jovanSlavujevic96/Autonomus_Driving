@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/rtrk/myROSworkspace/src/bachelor/build/devel/setup.sh
