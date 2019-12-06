@@ -1,5 +1,5 @@
-#ifndef BACHELOR_VIDEOPLAYER_NODE_VIDEOPLAYER_HPP_
-#define BACHELOR_VIDEOPLAYER_NODE_VIDEOPLAYER_HPP_
+#ifndef BACHELOR_VIDEOPLAYERNODE_VIDEOPLAYER_HPP_
+#define BACHELOR_VIDEOPLAYERNODE_VIDEOPLAYER_HPP_
 
 #include <opencv2/opencv.hpp>
 
@@ -18,14 +18,15 @@ private:
 	bool m_NodeMSG[3];
 	cv::VideoCapture m_Video;
 	bool m_IgnoreDetection = false, m_PauseVideo = false;
+
+	void checkMsgs(void);
 public:
 	VideoPlayer();
 	virtual ~VideoPlayer();
 
 	void setVideo(cv::VideoCapture &_video);
-	bool Cycle(void);
-	void checkMsgs(void);
+	bool SendFrame(void);
 	virtual void update(bool _data, Topics _subjTopic) override;
 };
 
-#endif //BACHELOR_VIDEOPLAYER_NODE_VIDEOPLAYER_HPP_
+#endif //BACHELOR_VIDEOPLAYERNODE_VIDEOPLAYER_HPP_

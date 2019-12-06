@@ -4,7 +4,9 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 
-Display::Display() : m_PauseBtnEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromDISPtoVIDEOP] )}
+Display::Display() : 
+    m_PauseBtnEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromDISPtoVIDEOP] )},
+    m_WatchdogEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromDISPtoWDOG] )}
 {
     this->m_Ignore = true;
     this->m_Pause = false;
@@ -49,6 +51,7 @@ void Display::update(sensor_msgs::Image &_frame, Topics _subjTopic)
 
 void Display::Keyboard(void)
 {
+    m_WatchdogEmiter->Publish(true);
     Display::checkIfPressed();	//check is <space> or <esc> pressed 
 	if(!m_Ignore)	//if <space> pressed -> m_Ignore = false -> send pause or start
 			m_PauseBtnEmiter->Publish(m_Pause); //send pause or start to publisher (VideoPlayerNode)

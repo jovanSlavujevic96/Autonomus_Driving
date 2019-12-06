@@ -17,31 +17,6 @@ VideoPlayer::~VideoPlayer()
 	system("clear");
 }
 
-bool VideoPlayer::Cycle(void)
-{
-	VideoPlayer::checkMsgs();
-	if(!m_PauseVideo)
-	{
-		cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
-
-		cv::Mat frame;
-		m_Video >> frame;
-		if(frame.empty() )
-		{
-			return false;
-		}
-		cv_ptr->encoding = "bgr8";
-		cv_ptr->image = frame;
-
-		sensor_msgs::Image img1;
-		cv_ptr->toImageMsg(img1);
-		m_FrameEmiter->Publish(img1);
-		return true;
-	}
-	else 
-		return true;
-}
-
 void VideoPlayer::setVideo(cv::VideoCapture &_video)
 {
 	m_Video = _video;
@@ -54,7 +29,6 @@ void VideoPlayer::checkMsgs(void)
 	{
 		if(m_NodeMSG[0])
 		{
-			std::cout << "obj det\n";
 			m_TimerStartsEmiter->Publish(true);
 			m_NodeMSG[0] = false;
 			m_IgnoreDetection = true;
@@ -89,4 +63,29 @@ void VideoPlayer::update(bool _data, Topics _subjTopic)
 		m_NodeMSG[1] = _data;
 	else if(_subjTopic == fromTIMERtoVIDEOP)
 		m_NodeMSG[2] = _data;
+}
+
+bool VideoPlayer::SendFrame(void)
+{
+	VideoPlayer::checkMsgs();
+	if(!m_PauseVideo)
+	{
+		cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
+
+		cv::Mat frame;
+		m_Video >> frame;
+		if(frame.empty() )
+		{
+			return false;
+		}
+		cv_ptr->encoding = "bgr8";
+		cv_ptr->image = frame;
+
+		sensor_msgs::Image img1;
+		cv_ptr->toImageMsg(img1);
+		m_FrameEmiter->Publish(img1);
+		return true;
+	}
+	else 
+		return true;
 }

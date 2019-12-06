@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 
 	while(ros::ok() )
 	{
-		bool info = PlayerObserver->Cycle();
+		bool info = PlayerObserver->SendFrame();
 		if(!info)
 		{
 			videoName.erase();

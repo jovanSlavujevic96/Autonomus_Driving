@@ -4,18 +4,19 @@
 #include <unistd.h>
 #include <numeric>
 
-#define counter_limit 100
+#define counter_limit 200
 #define mil 1000000
 
 static int count = 0;
+static bool key = false;
 
 void Watchdog::initMaps(void)
 {
-    const Topics topics[NumOfNodes] = {fromVIDEOPtoWDOG, fromOBJDETtoWDOG, fromTIMERtoWDOG };
+    const Topics topics[NumOfNodes] = {fromVIDEOPtoWDOG, fromOBJDETtoWDOG, fromTIMERtoWDOG, fromDISPtoWDOG };
     for(int i=0; i<NumOfNodes; ++i)
         m_TopicMap[topics[i]] = i;
     
-    const std::string nodes[NumOfNodes] = {"VideoPlayerNode", "ObjectDetectorNode", "TimerNode"};
+    const std::string nodes[NumOfNodes] = {"VideoPlayerNode", "ObjectDetectorNode", "TimerNode", "DisplayNode"};
     for(int i=0; i<NumOfNodes; ++i)
         m_NodeMap[&m_NodeMSG[i]] = nodes[i];
 }
@@ -43,7 +44,7 @@ void Watchdog::checkNodes(void)
         std::cout << std::endl;
         for(int i=0; i<NumOfNodes; ++i)
             if(!m_NodeMSG[i])
-                std::cout << m_NodeMap[&m_NodeMSG[i]] << " unconenected" << std::endl;
+                std::cout << m_NodeMap[&m_NodeMSG[i]] << " is unconnected" << std::endl;
         std::cout << std::endl;
 
         std::cout << "NOT OK\n";
@@ -52,9 +53,7 @@ void Watchdog::checkNodes(void)
 
         count = 0;
         Watchdog::resetNodes();  //kill all nodes and start again
-        std::fill(std::begin(m_NodeMSG), std::end(m_NodeMSG), false); //reset all msgs
     } 
-    ++count; 
 }
 
 void Watchdog::resetNodes(void)
@@ -76,7 +75,10 @@ void Watchdog::resetNodes(void)
     system("clear");
     system("gnome-terminal --command='roslaunch bachelor final.launch'");
     usleep(2*mil);
-    system("clear");  
+    system("clear");
+
+    std::fill(std::begin(m_NodeMSG), std::end(m_NodeMSG), false); //reset all msgs
+    m_Connection = false;  
 }
 
 Watchdog::Watchdog() : m_NodeMSG{false}
@@ -94,14 +96,29 @@ Watchdog::~Watchdog()
 void Watchdog::update(bool _data, Topics _subjTopic)
 {
     m_NodeMSG[m_TopicMap[_subjTopic]] = _data;
-    
-    if(! m_Connection)
-        Watchdog::initConnection();
-    else
-        Watchdog::checkNodes();
 }
 
-bool Watchdog::getConnection(void) const
+void Watchdog::DoStuff(void)
 {
-    return m_Connection;
+    if( !m_Connection && !key)
+    {
+        std::cout << "Waiting all nodes to connect." << std::endl;
+        key = true;
+    }
+    else if( m_Connection && key)
+    {
+        std::cout << "All nodes are connected." << std::endl;
+        key = false;
+    }
+
+    if( !m_Connection)
+    {
+        Watchdog::initConnection();
+        count = 0;
+    }
+    else
+    {
+        Watchdog::checkNodes();
+        ++count; 
+    }
 }

@@ -1,5 +1,5 @@
-#ifndef BACHELOR_TIMER_NODE_TIMER_HPP_
-#define BACHELOR_TIMER_NODE_TIMER_HPP_
+#ifndef BACHELOR_TIMERNODE_TIMER_HPP_
+#define BACHELOR_TIMERNODE_TIMER_HPP_
 
 #include <bachelor/Observer/IBoolObserver.hpp>
 #include <bachelor/DataProtocol/IBoolDataEmiter.hpp>
@@ -20,6 +20,7 @@ public:
     virtual ~Timer();
 
     virtual void update(bool _data, Topics _subjTopic) override;	//observer method
+    void SayHelloToWDog(void);
 };
 
-#endif //BACHELOR_TIMER_NODE_TIMER_HPP_
+#endif //BACHELOR_TIMERNODE_TIMER_HPP_

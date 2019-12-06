@@ -3,18 +3,18 @@
 
 #include <string>
 
-#define NumOfTopics 9
+#define NumOfTopics 10
 
 enum Topics
 {
-    fromDISPtoVIDEOP, fromOBJDETtoVIDEOP, fromOBJDETtoWDOG, fromOBJDETtoDISP, 
-    fromVIDEOPtoOBJDET, fromVIDEOPtoTIMER, fromVIDEOPtoWDOG, fromTIMERtoVIDEOP, fromTIMERtoWDOG 
+    fromDISPtoVIDEOP, fromOBJDETtoVIDEOP, fromOBJDETtoWDOG, fromOBJDETtoDISP, fromVIDEOPtoOBJDET, 
+    fromVIDEOPtoTIMER, fromVIDEOPtoWDOG, fromTIMERtoVIDEOP, fromTIMERtoWDOG, fromDISPtoWDOG
 };
 
 const std::string TopicName[NumOfTopics] =
 {
-    "/fromDISPtoVIDEOP", "/fromOBJDETtoVIDEOP", "/fromOBJDETtoWDOG", "/fromOBJDETtoDISP", 
-    "/fromVIDEOPtoOBJDET", "/fromVIDEOPtoTIMER", "/fromVIDEOPtoWDOG", "/fromTIMERtoVIDEOP", "/fromTIMERtoWDOG" 
+    "/fromDISPtoVIDEOP", "/fromOBJDETtoVIDEOP", "/fromOBJDETtoWDOG", "/fromOBJDETtoDISP", "/fromVIDEOPtoOBJDET", 
+    "/fromVIDEOPtoTIMER", "/fromVIDEOPtoWDOG", "/fromTIMERtoVIDEOP", "/fromTIMERtoWDOG", "/fromDISPtoWDOG"
 };
 
 #endif //BACHELOR_TOPICS_H

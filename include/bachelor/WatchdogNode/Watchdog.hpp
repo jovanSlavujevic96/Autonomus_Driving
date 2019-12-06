@@ -1,12 +1,12 @@
-#ifndef BACHELOR_WATCHDOG_NODE_WATCHDOG_HPP_
-#define BACHELOR_WATCHDOG_NODE_WATCHDOG_HPP_
+#ifndef BACHELOR_WATCHDOGNODE_WATCHDOG_HPP_
+#define BACHELOR_WATCHDOGNODE_WATCHDOG_HPP_
 
 #include <bachelor/Observer/IBoolObserver.hpp>
 
 #include <string>
 #include <map>
 
-#define NumOfNodes 3
+#define NumOfNodes 4
 
 class Watchdog : public IBoolObserver
 {
@@ -27,7 +27,7 @@ public:
     virtual ~Watchdog();
 
     virtual void update(bool _data, Topics _subjTopic) override;
-    bool getConnection(void) const;	
+    void DoStuff(void);
 };
 
-#endif //BACHELOR_WATCHDOG_NODE_WATCHDOG_HPP_
+#endif //BACHELOR_WATCHDOGNODE_WATCHDOG_HPP_

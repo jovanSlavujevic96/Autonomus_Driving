@@ -58,8 +58,9 @@ void Timer::update(bool _data, Topics _subjTopic)
         }
         m_TimerIndicator = false;
     }
-    else
-    {
-        m_DataEmiterWatchdog->Publish(true);
-    }
+}
+
+void Timer::SayHelloToWDog(void)
+{
+    m_DataEmiterWatchdog->Publish(true);
 }

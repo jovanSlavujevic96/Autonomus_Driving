@@ -107,7 +107,8 @@ add_library(_ObjectDetectorLib
   src/DataProtocol/BoolDataEmiter.cpp      #Send data to other nodes
   src/DataProtocol/FrameDataReceiver.cpp   #Observer Pattern (subject class)
   src/DataProtocol/FrameDataEmiter.cpp    #Send processed frame to Display node
-  src/ObjectDetectorNode/ImageProcessor.cpp  #ImageProcessing 	
+  src/ObjectDetectorNode/StopSignProcessor.cpp  #Stop Sign detecting and drawing on frame
+  src/ObjectDetectorNode/SpeedLimitProcessor.cpp  #Speed Limit Sign detecting and drawing on frame 	
   src/ObjectDetectorNode/ObjectDetector.cpp  #main class (observer class)
 )
 
@@ -144,7 +145,7 @@ add_dependencies(TimerNode
   ${catkin_EXPORTED_TARGETS}s
 )
 
-############################################## Watchdog bash commands
+############################################## Watchdog 
 
 add_library(_WatchdogLib
   src/WatchdogNode/Watchdog.cpp
@@ -183,12 +184,6 @@ add_dependencies(DisplayNode
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}s 
 )
-
-############################################## Semaphore detection
-
-add_executable(speed_limit node/speed_limit.cpp )
-target_link_libraries(speed_limit ${OpenCV_LIBS} ${catkin_LIBRARIES} )
-add_dependencies(speed_limit ${${PROJECT_NAME}_gencpp} ${catkin_EXPORTED_TARGETS}s )
 
 ##############################################
 
