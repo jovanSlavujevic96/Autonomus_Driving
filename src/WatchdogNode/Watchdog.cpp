@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <numeric>
 
-#define counter_limit 200
+#define counter_limit 10
 #define mil 1000000
 
 static int count = 0;
@@ -93,12 +93,12 @@ Watchdog::~Watchdog()
     system("clear");
 }
 
-void Watchdog::update(bool _data, Topics _subjTopic)
+void Watchdog::update(bool &_data, Topics _subjTopic)
 {
     m_NodeMSG[m_TopicMap[_subjTopic]] = _data;
 }
 
-void Watchdog::DoStuff(void)
+bool Watchdog::doStuff(void)
 {
     if( !m_Connection && !key)
     {
@@ -115,10 +115,12 @@ void Watchdog::DoStuff(void)
     {
         Watchdog::initConnection();
         count = 0;
+        return true;
     }
     else
     {
         Watchdog::checkNodes();
-        ++count; 
+        ++count;
+        return true; 
     }
 }

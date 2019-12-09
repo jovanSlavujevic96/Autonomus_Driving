@@ -1,5 +1,5 @@
 #include <bachelor/DisplayNode/Display.hpp>
-#include <bachelor/DataProtocol/FrameDataReceiver.hpp>
+#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
 
 #include <memory>
 
@@ -9,13 +9,15 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "DisplayNode");
     
-    std::unique_ptr<Display> DisplayObserver = std::make_unique<Display>();
-    std::unique_ptr<IFrameDataReceiver> FrameRcvSubject = std::make_unique<FrameDataReceiver>(TopicName[fromOBJDETtoDISP] );
+    std::unique_ptr<IObserver<sensor_msgs::Image> > DisplayObserver = std::make_unique<Display>();
+
+    std::unique_ptr<IDataReceiver<sensor_msgs::Image,sensor_msgs::ImageConstPtr> > FrameRcvSubject; 
+    FrameRcvSubject = std::make_unique<DataReceiver<sensor_msgs::Image,sensor_msgs::ImageConstPtr> >(fromOBJDETtoDISP);
     FrameRcvSubject->registerObserver(DisplayObserver.get(), fromOBJDETtoDISP);
     
     while(ros::ok() )
     {
-        DisplayObserver->Keyboard();
+        DisplayObserver->doStuff();
         ros::spinOnce();
     }
     return 0;

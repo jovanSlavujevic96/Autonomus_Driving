@@ -84,9 +84,8 @@ include_directories(
 ############################################## VideoPlayer_node
 add_library(_VideoPlayerLib
   src/VideoPlayerNode/VideoPlayer.cpp
-  src/DataProtocol/FrameDataEmiter.cpp
-  src/DataProtocol/BoolDataEmiter.cpp
-  src/DataProtocol/BoolDataReceiver.cpp
+  src/DataProtocol/Template/DataSender.cpp
+  src/DataProtocol/Template/DataReceiver.cpp
 )
 
 add_executable(VideoPlayerNode node/VideoPlayerNode.cpp )
@@ -104,12 +103,12 @@ add_dependencies(VideoPlayerNode
 ############################################## ObjectDetector_node
 
 add_library(_ObjectDetectorLib
-  src/DataProtocol/BoolDataEmiter.cpp      #Send data to other nodes
-  src/DataProtocol/FrameDataReceiver.cpp   #Observer Pattern (subject class)
-  src/DataProtocol/FrameDataEmiter.cpp    #Send processed frame to Display node
+  src/ObjectDetectorNode/ObjectDetector.cpp  #main class (observer class)
+  src/DataProtocol/Template/DataSender.cpp
+  src/DataProtocol/Template/DataReceiver.cpp   #Observer Pattern (subject class)
+
   src/ObjectDetectorNode/StopSignProcessor.cpp  #Stop Sign detecting and drawing on frame
   src/ObjectDetectorNode/SpeedLimitProcessor.cpp  #Speed Limit Sign detecting and drawing on frame 	
-  src/ObjectDetectorNode/ObjectDetector.cpp  #main class (observer class)
 )
 
 add_executable(ObjectDetectorNode node/ObjectDetectorNode.cpp ) 
@@ -129,8 +128,8 @@ add_dependencies(ObjectDetectorNode
 
 add_library(_TimerLib
   src/TimerNode/Timer.cpp
-  src/DataProtocol/BoolDataEmiter.cpp
-  src/DataProtocol/BoolDataReceiver.cpp
+  src/DataProtocol/Template/DataSender.cpp
+  src/DataProtocol/Template/DataReceiver.cpp
 )
 
 add_executable(TimerNode node/TimerNode.cpp )
@@ -149,7 +148,7 @@ add_dependencies(TimerNode
 
 add_library(_WatchdogLib
   src/WatchdogNode/Watchdog.cpp
-  src/DataProtocol/BoolDataReceiver.cpp
+  src/DataProtocol/Template/DataReceiver.cpp
 )
 
 add_executable(WatchdogNode node/WatchdogNode.cpp )
@@ -168,8 +167,8 @@ add_dependencies(WatchdogNode
 
 add_library(_DisplayLib
   src/DisplayNode/Display.cpp
-  src/DataProtocol/FrameDataReceiver.cpp
-  src/DataProtocol/BoolDataEmiter.cpp
+  src/DataProtocol/Template/DataSender.cpp
+  src/DataProtocol/Template/DataReceiver.cpp
 )
 
 add_executable(DisplayNode node/DisplayNode.cpp )

@@ -1,12 +1,11 @@
 #include <bachelor/VideoPlayerNode/VideoPlayer.hpp>
-#include <bachelor/DataProtocol/BoolDataEmiter.hpp>
-#include <bachelor/DataProtocol/FrameDataEmiter.hpp>
+#include <bachelor/DataProtocol/Template/DataSender.hpp>
 #include <cv_bridge/cv_bridge.h>
 
 VideoPlayer::VideoPlayer() :
-	m_FrameEmiter{std::make_unique<FrameDataEmiter>(TopicName[fromVIDEOPtoOBJDET] )},
-	m_TimerStartsEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromVIDEOPtoTIMER] )}, 
-	m_WatchdogEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromVIDEOPtoWDOG] )},
+	m_FrameEmiter{std::make_unique<DataSender<sensor_msgs::Image,sensor_msgs::Image> >(fromVIDEOPtoOBJDET) },
+	m_TimerStartsEmiter{std::make_unique<DataSender<bool,std_msgs::Bool> >(fromVIDEOPtoTIMER) }, 
+	m_WatchdogEmiter{std::make_unique<DataSender<bool,std_msgs::Bool> >(fromVIDEOPtoWDOG) },
 	m_NodeMSG{false}
 {
 	system("clear");
@@ -55,7 +54,7 @@ void VideoPlayer::checkMsgs(void)
 	}
 }
 
-void VideoPlayer::update(bool _data, Topics _subjTopic)
+void VideoPlayer::update(bool &_data, Topics _subjTopic)
 {
 	if(_subjTopic == fromOBJDETtoVIDEOP)
 		m_NodeMSG[0] = _data;
@@ -65,7 +64,7 @@ void VideoPlayer::update(bool _data, Topics _subjTopic)
 		m_NodeMSG[2] = _data;
 }
 
-bool VideoPlayer::SendFrame(void)
+bool VideoPlayer::doStuff(void)
 {
 	VideoPlayer::checkMsgs();
 	if(!m_PauseVideo)

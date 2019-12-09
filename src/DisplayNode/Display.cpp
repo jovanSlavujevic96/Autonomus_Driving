@@ -1,12 +1,12 @@
 #include <bachelor/DisplayNode/Display.hpp>
-#include <bachelor/DataProtocol/BoolDataEmiter.hpp>
+#include <bachelor/DataProtocol/Template/DataSender.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 
 Display::Display() : 
-    m_PauseBtnEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromDISPtoVIDEOP] )},
-    m_WatchdogEmiter{std::make_unique<BoolDataEmiter>(TopicName[fromDISPtoWDOG] )}
+    m_PauseBtnEmiter{std::make_unique<DataSender<bool, std_msgs::Bool> >(fromDISPtoVIDEOP) },
+    m_WatchdogEmiter{std::make_unique<DataSender<bool, std_msgs::Bool> >(fromDISPtoWDOG) }
 {
     this->m_Ignore = true;
     this->m_Pause = false;
@@ -40,19 +40,22 @@ void Display::checkIfPressed(void)
     m_Ignore = true;
 }
 
-void Display::update(sensor_msgs::Image &_frame, Topics _subjTopic)
+void Display::update(sensor_msgs::Image &_data, Topics _subjTopic)
 {
     if(_subjTopic == fromOBJDETtoDISP)
     {
-        cv::Mat picMat = cv_bridge::toCvCopy(_frame, "bgr8")->image;
+        cv::Mat picMat = cv_bridge::toCvCopy(_data, "bgr8")->image;
 		cv::imshow("video stream", picMat );
     }
 }
 
-void Display::Keyboard(void)
+bool Display::doStuff(void)
 {
     m_WatchdogEmiter->Publish(true);
     Display::checkIfPressed();	//check is <space> or <esc> pressed 
 	if(!m_Ignore)	//if <space> pressed -> m_Ignore = false -> send pause or start
-			m_PauseBtnEmiter->Publish(m_Pause); //send pause or start to publisher (VideoPlayerNode)
+    {
+        m_PauseBtnEmiter->Publish(m_Pause); //send pause or start to publisher (VideoPlayerNode)
+    }
+    return true;
 }

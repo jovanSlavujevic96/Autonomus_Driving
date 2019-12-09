@@ -1,10 +1,13 @@
 #include <bachelor/VideoPlayerNode/VideoPlayer.hpp>
-#include <bachelor/DataProtocol/BoolDataReceiver.hpp>
+#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
 
 #include <iostream>
 #include <sstream>
 
 #include <ros/ros.h>
+
+#include <std_msgs/Bool.h>
+#include <image_transport/image_transport.h>
 
 #define videoLib "/home/rtrk/Videos/"
 
@@ -21,14 +24,16 @@ int main(int argc, char **argv)
 
 	ros::init(argc, argv, "VideoPlayerNode");
 	
+
 	std::unique_ptr<VideoPlayer> PlayerObserver = std::make_unique<VideoPlayer>();
 	PlayerObserver->setVideo(videoCap);
+
 	
-	std::unique_ptr<IBoolDataReceiver> DataSubject[3];
+	std::unique_ptr<IDataReceiver<bool,std_msgs::Bool> > DataSubject[3];
 	const Topics topics[3] = {fromTIMERtoVIDEOP, fromDISPtoVIDEOP, fromOBJDETtoVIDEOP};
 	for(int i=0; i<3; ++i)
 	{
-		DataSubject[i] = std::make_unique<BoolDataReceiver>(TopicName[topics[i]] );
+		DataSubject[i] = std::make_unique<DataReceiver<bool,std_msgs::Bool> >(topics[i]);
 		DataSubject[i]->registerObserver(PlayerObserver.get(), topics[i]);
 	}
 
@@ -36,7 +41,7 @@ int main(int argc, char **argv)
 
 	while(ros::ok() )
 	{
-		bool info = PlayerObserver->SendFrame();
+		bool info = PlayerObserver->doStuff();
 		if(!info)
 		{
 			videoName.erase();
@@ -46,6 +51,7 @@ int main(int argc, char **argv)
 		cv::waitKey(30); //60 za sporije
 		ros::spinOnce();
 	}
+
 	return EXIT_SUCCESS;
 }
 

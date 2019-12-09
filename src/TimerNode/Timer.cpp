@@ -1,5 +1,5 @@
 #include <bachelor/TimerNode/Timer.hpp>
-#include <bachelor/DataProtocol/BoolDataEmiter.hpp>
+#include <bachelor/DataProtocol/Template/DataSender.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -31,8 +31,8 @@ bool Timer::Count(void)
 }
 
 Timer::Timer(const unsigned int CountLimit) :
-    m_DataEmiterTimerEnds{std::make_unique<BoolDataEmiter>(TopicName[fromTIMERtoVIDEOP] )}, 
-    m_DataEmiterWatchdog{std::make_unique<BoolDataEmiter>(TopicName[fromTIMERtoWDOG] )},
+    m_DataEmiterTimerEnds{std::make_unique<DataSender<bool,std_msgs::Bool> >(fromTIMERtoVIDEOP) }, 
+    m_DataEmiterWatchdog{std::make_unique<DataSender<bool,std_msgs::Bool> >(fromTIMERtoWDOG) },
     m_TimerIndicator(false), m_Time(CountLimit)
 {
     system("clear"); 
@@ -44,7 +44,7 @@ Timer::~Timer()
     system("clear"); 
 }
 
-void Timer::update(bool _data, Topics _subjTopic)
+void Timer::update(bool &_data, Topics _subjTopic)
 {
     if(_subjTopic == fromVIDEOPtoTIMER)
     {
@@ -60,7 +60,8 @@ void Timer::update(bool _data, Topics _subjTopic)
     }
 }
 
-void Timer::SayHelloToWDog(void)
+bool Timer::doStuff(void)
 {
     m_DataEmiterWatchdog->Publish(true);
+    return true;
 }

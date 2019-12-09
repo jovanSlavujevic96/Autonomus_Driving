@@ -1,19 +1,24 @@
 #include <ros/ros.h>
+
 #include <bachelor/TimerNode/Timer.hpp>
-#include <bachelor/DataProtocol/BoolDataReceiver.hpp>
+#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
 #include <bachelor/Topics.h>
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "TimerNode");
 
-    std::unique_ptr<Timer> TimerObserver = std::make_unique<Timer>(3);
-    std::unique_ptr<IBoolDataReceiver> Subject = std::make_unique<BoolDataReceiver>(TopicName[fromVIDEOPtoTIMER] );
+    std::unique_ptr<IObserver<bool> > TimerObserver = std::make_unique<Timer>(3);
+
+    std::unique_ptr<IDataReceiver<bool,std_msgs::Bool> > Subject;
+    Subject = std::make_unique<DataReceiver<bool,std_msgs::Bool> >(fromVIDEOPtoTIMER);
+
     Subject->registerObserver(TimerObserver.get(), fromVIDEOPtoTIMER );
 
-    while(ros::ok() )
+    bool info = true;
+    while(ros::ok() && info)
     {
-        TimerObserver->SayHelloToWDog();
+        info = TimerObserver->doStuff();
         ros::spinOnce();
     }
 

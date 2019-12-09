@@ -3,30 +3,31 @@
 
 #include <memory>
 
-#include <bachelor/Observer/IImageObserver.hpp> 
-#include <bachelor/DataProtocol/IBoolDataEmiter.hpp>
-#include <bachelor/DataProtocol/IFrameDataEmiter.hpp>
-
-#include <bachelor/Topics.h>
+#include <bachelor/Observer/IObserver.hpp> 
+#include <bachelor/DataProtocol/Template/IDataSender.hpp>
 
 #include "IImageProcessor.hpp"
 
+#include <image_transport/image_transport.h>
+#include <std_msgs/Bool.h>
+
 //observer
-class ObjectDetector : public IImageObserver
+template class IObserver<sensor_msgs::Image>;
+class ObjectDetector : public IObserver<sensor_msgs::Image>
 {
 private:
-	std::unique_ptr<IBoolDataEmiter> m_DataEmiterWatchdog, m_DataEmiterVideoPlayer;
-	std::unique_ptr<IFrameDataEmiter> m_FrameEmiterDisplay;
+	std::unique_ptr<IDataSender<bool, std_msgs::Bool> > m_DataEmiterWatchdog, m_DataEmiterVideoPlayer;
+	std::unique_ptr<IDataSender<sensor_msgs::Image, sensor_msgs::Image> > m_FrameEmiterDisplay;
 	std::vector<IImageProcessor *> m_ImgProcVec;
 
 public:
 	ObjectDetector();
 	virtual ~ObjectDetector() = default;
 
-	virtual void update(sensor_msgs::Image &_frame, Topics _subjTopic) override;	//observer method
-	void sendDataToTopic(Topics _whichTopic, bool _data);
 	void addImageProcessor(IImageProcessor *_processor);
-
+	
+	virtual void update(sensor_msgs::Image &_frame, Topics _subjTopic) override;	//observer method
+	virtual bool doStuff(void) override;
 };
 
 #endif //BACHELOR_OBJECTDETECTORNODE_OBJECTDETECTOR_HPP_

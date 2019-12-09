@@ -1,6 +1,10 @@
 #include <bachelor/ObjectDetectorNode/ObjectDetector.hpp>
-#include <bachelor/DataProtocol/FrameDataReceiver.hpp>
+
+#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
+//#include <image_transport/image_transport.h>
+
 #include <bachelor/ObjectDetectorNode/StopSignProcessor.hpp>
+#include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
 
 #include <bachelor/Topics.h>
 
@@ -11,18 +15,21 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "ObjectDetectorNode");
 	
 	std::unique_ptr<ObjectDetector> ObjDetObserver = std::make_unique<ObjectDetector>();
-	std::unique_ptr<IFrameDataReceiver> FrameRcvSubject = std::make_unique<FrameDataReceiver>(TopicName[fromVIDEOPtoOBJDET] );
+	
+	std::unique_ptr<IDataReceiver<sensor_msgs::Image,sensor_msgs::ImageConstPtr> > FrameRcvSubject;
+	FrameRcvSubject = std::make_unique<DataReceiver<sensor_msgs::Image,sensor_msgs::ImageConstPtr> >(fromVIDEOPtoOBJDET);
+	FrameRcvSubject->registerObserver(ObjDetObserver.get(), fromVIDEOPtoOBJDET );
+
 	std::unique_ptr<IImageProcessor> StopProc = std::make_unique<StopSignProcessor>();
 	ObjDetObserver->addImageProcessor(StopProc.get() );
-	StopSignProcessor StopProc2;
-	ObjDetObserver->addImageProcessor(&StopProc2);
 
-	FrameRcvSubject->registerObserver(ObjDetObserver.get(), fromVIDEOPtoOBJDET );
+	std::unique_ptr<IImageProcessor> LimitProc = std::make_unique<SpeedLimitProcessor>();
+	ObjDetObserver->addImageProcessor(LimitProc.get() );
+
 
 	while(ros::ok() )
 	{
-		ObjDetObserver->sendDataToTopic(fromOBJDETtoWDOG, true);	//send true to watchdog node
-		
+		ObjDetObserver->doStuff();	//send true to watchdog node
 		ros::spinOnce(); //spin for new event on topics
 	}
 	
