@@ -1,6 +1,8 @@
 #include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
+#define SpeedLimitClassifierPath "/home/rtrk/myROSworkspace/src/bachelor/classifiers/speedLimit1.xml"
+
 void SpeedLimitProcessor::resize(const unsigned int limit)
 {
     m_NumOfResizing = 0;
@@ -18,8 +20,7 @@ void SpeedLimitProcessor::crop(void)
 
 void SpeedLimitProcessor::setRedHueFrame(const cv::Mat &sample, cv::Mat &result)
 {
-    cv::Mat new_image = sample.clone();
-    cv::Mat hsv_image;
+    cv::Mat new_image = sample.clone(), hsv_image;
 	cv::cvtColor(new_image, hsv_image, cv::COLOR_BGR2HSV);
 
     cv::Mat redMask1, redMask2;
@@ -84,16 +85,48 @@ std::vector<cv::Rect> SpeedLimitProcessor::getRedHueContours(void) const
     return tmpContours; 
 }
 
+std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitContours(void) 
+{
+    auto redHueResizedContours = SpeedLimitProcessor::getRedHueContours();
+    std::vector<cv::Rect> tmp;
+
+    for(int i=0; i<redHueResizedContours.size(); ++i)
+        for(int rectIncrVal = redHueResizedContours[i].width/4; rectIncrVal >= 1; --rectIncrVal)
+            if( (redHueResizedContours[i].x - rectIncrVal) >= 0 && (redHueResizedContours[i].y - rectIncrVal) >= 0 && 
+                (redHueResizedContours[i].x + redHueResizedContours[i].width  + 2*rectIncrVal) <= m_HelpProcFrame.size().width && 
+                (redHueResizedContours[i].y + redHueResizedContours[i].height + 2*rectIncrVal) <= m_HelpProcFrame.size().height   )
+            {
+                redHueResizedContours[i].x -= rectIncrVal;
+                redHueResizedContours[i].y -= rectIncrVal;
+                redHueResizedContours[i].width  += 2*rectIncrVal;
+                redHueResizedContours[i].height += 2*rectIncrVal;	//increase size of cropped rectangle from the frame
+                break;
+            }
+
+    for(int i=0; i<redHueResizedContours.size(); ++i)
+	{
+		std::vector<cv::Rect> speedLFound;		
+        m_SpeedClassifier.detectMultiScale( m_HelpProcFrame(redHueResizedContours[i]), speedLFound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
+		
+		if( !speedLFound.empty() )
+		{
+			speedLFound[0].x +=  redHueResizedContours[i].x;
+			speedLFound[0].y +=  redHueResizedContours[i].y;
+        
+			tmp.push_back( speedLFound[0] );
+		}	
+	}
+    return tmp;
+}
+
 void SpeedLimitProcessor::setContoursByOCRcheckAndStrings(void) 
 {
-    auto samples = SpeedLimitProcessor::getRedHueContours();
-    m_Strings.clear();
-    m_SpeedLimitContours.clear();
+    auto samples = SpeedLimitProcessor::getSpeedLimitContours();
 
     for(unsigned int i=0; i<samples.size(); ++i)
     {
         std::string output = m_OCR->run( m_HelpProcFrame(samples[i]), 1, 0);
-               
+
         int incr=0; 
         const int length = strlen(output.c_str() );
         for(unsigned int j=0; j<length; ++j)
@@ -106,7 +139,7 @@ void SpeedLimitProcessor::setContoursByOCRcheckAndStrings(void)
         if(length > 1 && incr == length )
         {
             m_Strings.push_back(output);
-            for(int k=0; i<m_NumOfResizing; ++k)
+            for(int k=0; k<m_NumOfResizing; ++k)
             {
                 samples[i].x *= 2;
                 samples[i].y *= 2;
@@ -145,18 +178,30 @@ SpeedLimitProcessor::SpeedLimitProcessor() :
     m_OCR{cv::text::OCRTesseract::create(NULL, "eng", "0123456789", 1, 6) },
     m_SpeedLimitDetected{false}, m_NumOfResizing{0}, m_LimitValue{0}
 {
-
+    if( !m_SpeedClassifier.load(SpeedLimitClassifierPath) )
+    {
+        std::cerr << '\t' << "Error loading classifier: " << "\n\t" << SpeedLimitClassifierPath << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 }
 
 void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
 {
-    m_InputFrame = cv_bridge::toCvCopy(rawFrame, "bgr8")->image.clone();
+    m_Strings.clear();
+    m_SpeedLimitContours.clear();
 
-    SpeedLimitProcessor::resize(600); 
-    SpeedLimitProcessor::crop(); //use only upper half of the image(frame)!
+    m_InputFrame = cv_bridge::toCvCopy(rawFrame, "bgr8")->image.clone();
+    m_HelpProcFrame = m_InputFrame.clone();
+
+    SpeedLimitProcessor::resize(600);
+    //SpeedLimitProcessor::crop(); //use only upper half of the image(frame)!
+    
     SpeedLimitProcessor::setRedHueFrame(m_HelpProcFrame, m_RedHueFrame);
     SpeedLimitProcessor::setContoursByOCRcheckAndStrings();
     SpeedLimitProcessor::drawLocations(m_InputFrame);
+
+    //cv::resize(m_InputFrame, m_InputFrame, cv::Size(m_InputFrame.cols*0.75, m_InputFrame.rows*0.75) );
+    
 }
 
 sensor_msgs::Image SpeedLimitProcessor::getProcessedFrame(void) const

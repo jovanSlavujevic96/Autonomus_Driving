@@ -1,4 +1,4 @@
-#include <bachelor/DataProtocol/Template/DataSender.hpp>
+#include <bachelor/DataProtocol/DataSender.hpp>
 
 #include <ros/ros.h>
 

@@ -10,6 +10,7 @@ class SpeedLimitProcessor : public IImageProcessor
 {
 private:
     cv::Mat m_InputFrame, m_HelpProcFrame, m_RedHueFrame;
+    cv::CascadeClassifier m_SpeedClassifier;
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
     std::vector<cv::Rect> m_SpeedLimitContours;
     std::vector<std::string> m_Strings;
@@ -20,6 +21,7 @@ private:
     void crop(void);
     void setRedHueFrame(const cv::Mat &sample, cv::Mat &result);
     std::vector<cv::Rect> getRedHueContours(void) const;
+    std::vector<cv::Rect> getSpeedLimitContours(void);
     void setContoursByOCRcheckAndStrings(void);
     void drawLocations(cv::Mat &img, const cv::Scalar color );
 

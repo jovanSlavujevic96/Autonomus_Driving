@@ -2,8 +2,7 @@
 #define BACHELOR_VIDEOPLAYERNODE_VIDEOPLAYER_HPP_
 
 #include <bachelor/Observer/IObserver.hpp>
-#include <bachelor/DataProtocol/Template/IDataSender.hpp>
-#include <bachelor/Topics.h>
+#include <bachelor/DataProtocol/IDataSender.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <memory>

@@ -194,14 +194,14 @@ void StopSignProcessor::drawLocations(cv::Mat &img, const cv::Scalar color = cv:
     m_StopDetected = true;
 }
 
-StopSignProcessor::StopSignProcessor() : m_NumOfResizing{0}, m_StopDetected{false} 
-    , m_OCR{cv::text::OCRTesseract::create(NULL, "eng", "STOP", 1, 6)}
+StopSignProcessor::StopSignProcessor() : m_NumOfResizing{0}, m_StopDetected{false}
 {
     if( !m_StopClassifier.load(StopClassifierPath) )
     {
         std::cerr << '\t' << "Error loading classifier: " << "\n\t" << StopClassifierPath << std::endl;
         std::exit(EXIT_FAILURE);
     }
+    m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "STOP", 1, 6);
 }
 
 void StopSignProcessor::setFrame(sensor_msgs::Image &rawFrame)
@@ -239,7 +239,7 @@ bool StopSignProcessor::getDetection(void) const
 
 int StopSignProcessor::getValue(void) const
 {
-    return 0;   //I must have this method because of interface
+    return 0;   //I must have this method because of interface (abstract  method)
                 //I don't use it actually
 }
 

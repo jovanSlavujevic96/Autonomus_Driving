@@ -2,7 +2,7 @@
 #define BACHELOR_TIMERNODE_TIMER_HPP_
 
 #include <bachelor/Observer/IObserver.hpp>
-#include <bachelor/DataProtocol/Template/IDataSender.hpp>
+#include <bachelor/DataProtocol/IDataSender.hpp>
 
 #include <memory>
 #include <std_msgs/Bool.h>

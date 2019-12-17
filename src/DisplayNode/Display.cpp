@@ -1,5 +1,5 @@
 #include <bachelor/DisplayNode/Display.hpp>
-#include <bachelor/DataProtocol/Template/DataSender.hpp>
+#include <bachelor/DataProtocol/DataSender.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>

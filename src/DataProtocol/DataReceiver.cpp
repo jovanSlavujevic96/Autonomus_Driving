@@ -1,4 +1,4 @@
-#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
+#include <bachelor/DataProtocol/DataReceiver.hpp>
 
 #include <ros/ros.h>
 #include <vector>

@@ -1,5 +1,5 @@
 #include <bachelor/DisplayNode/Display.hpp>
-#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
+#include <bachelor/DataProtocol/DataReceiver.hpp>
 
 #include <memory>
 

@@ -84,8 +84,8 @@ include_directories(
 ############################################## VideoPlayer_node
 add_library(_VideoPlayerLib
   src/VideoPlayerNode/VideoPlayer.cpp
-  src/DataProtocol/Template/DataSender.cpp
-  src/DataProtocol/Template/DataReceiver.cpp
+  src/DataProtocol/DataSender.cpp
+  src/DataProtocol/DataReceiver.cpp
 )
 
 add_executable(VideoPlayerNode node/VideoPlayerNode.cpp )
@@ -104,8 +104,8 @@ add_dependencies(VideoPlayerNode
 
 add_library(_ObjectDetectorLib
   src/ObjectDetectorNode/ObjectDetector.cpp  #main class (observer class)
-  src/DataProtocol/Template/DataSender.cpp
-  src/DataProtocol/Template/DataReceiver.cpp   #Observer Pattern (subject class)
+  src/DataProtocol/DataSender.cpp
+  src/DataProtocol/DataReceiver.cpp   #Observer Pattern (subject class)
 
   src/ObjectDetectorNode/StopSignProcessor.cpp  #Stop Sign detecting and drawing on frame
   src/ObjectDetectorNode/SpeedLimitProcessor.cpp  #Speed Limit Sign detecting and drawing on frame 	
@@ -128,8 +128,8 @@ add_dependencies(ObjectDetectorNode
 
 add_library(_TimerLib
   src/TimerNode/Timer.cpp
-  src/DataProtocol/Template/DataSender.cpp
-  src/DataProtocol/Template/DataReceiver.cpp
+  src/DataProtocol/DataSender.cpp
+  src/DataProtocol/DataReceiver.cpp
 )
 
 add_executable(TimerNode node/TimerNode.cpp )
@@ -148,7 +148,7 @@ add_dependencies(TimerNode
 
 add_library(_WatchdogLib
   src/WatchdogNode/Watchdog.cpp
-  src/DataProtocol/Template/DataReceiver.cpp
+  src/DataProtocol/DataReceiver.cpp
 )
 
 add_executable(WatchdogNode node/WatchdogNode.cpp )
@@ -167,8 +167,8 @@ add_dependencies(WatchdogNode
 
 add_library(_DisplayLib
   src/DisplayNode/Display.cpp
-  src/DataProtocol/Template/DataSender.cpp
-  src/DataProtocol/Template/DataReceiver.cpp
+  src/DataProtocol/DataSender.cpp
+  src/DataProtocol/DataReceiver.cpp
 )
 
 add_executable(DisplayNode node/DisplayNode.cpp )
@@ -185,6 +185,61 @@ add_dependencies(DisplayNode
 )
 
 ##############################################
+
+
+
+
+
+####BZVZ
+
+add_library(_Lib1
+  src/ObjectDetectorNode/SpeedLimitProcessor.cpp
+)
+
+add_executable(LimitProc bzvz/test2/speedL.cpp )
+
+target_link_libraries(LimitProc 
+  _Lib1
+  ${OpenCV_LIBS}
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(LimitProc 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}s 
+)
+
+##############################################
+
+add_executable( StopDet bzvz/test3/test_det.cpp )
+
+target_link_libraries(StopDet
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(StopDet 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}s 
+)
+
+##############################################
+
+add_executable( LaneDet bzvz/test1/main.cpp )
+
+target_link_libraries(LaneDet
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(LaneDet 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}s 
+)
+
+##############################################
+####BZVZ
+
 
 #############
 ## Install ##

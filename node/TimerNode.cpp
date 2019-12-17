@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 
 #include <bachelor/TimerNode/Timer.hpp>
-#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
+#include <bachelor/DataProtocol/DataReceiver.hpp>
 #include <bachelor/Topics.h>
 
 int main(int argc, char **argv)

@@ -1,6 +1,6 @@
 #include <bachelor/ObjectDetectorNode/ObjectDetector.hpp>
 
-#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
+#include <bachelor/DataProtocol/DataReceiver.hpp>
 //#include <image_transport/image_transport.h>
 
 #include <bachelor/ObjectDetectorNode/StopSignProcessor.hpp>
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	ObjDetObserver->addImageProcessor(StopProc.get() );
 
 	std::unique_ptr<IImageProcessor> LimitProc = std::make_unique<SpeedLimitProcessor>();
-	ObjDetObserver->addImageProcessor(LimitProc.get() );
+	//ObjDetObserver->addImageProcessor(LimitProc.get() );
 
 
 	while(ros::ok() )

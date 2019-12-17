@@ -1,5 +1,5 @@
 #include <bachelor/VideoPlayerNode/VideoPlayer.hpp>
-#include <bachelor/DataProtocol/Template/DataSender.hpp>
+#include <bachelor/DataProtocol/DataSender.hpp>
 #include <cv_bridge/cv_bridge.h>
 
 VideoPlayer::VideoPlayer() :

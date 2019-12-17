@@ -4,7 +4,7 @@
 #include <memory>
 
 #include <bachelor/Observer/IObserver.hpp>
-#include <bachelor/DataProtocol/Template/IDataSender.hpp>
+#include <bachelor/DataProtocol/IDataSender.hpp>
 
 #include <image_transport/image_transport.h>
 #include <std_msgs/Bool.h>

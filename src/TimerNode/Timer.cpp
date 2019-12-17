@@ -1,5 +1,5 @@
 #include <bachelor/TimerNode/Timer.hpp>
-#include <bachelor/DataProtocol/Template/DataSender.hpp>
+#include <bachelor/DataProtocol/DataSender.hpp>
 
 #include <iostream>
 #include <chrono>

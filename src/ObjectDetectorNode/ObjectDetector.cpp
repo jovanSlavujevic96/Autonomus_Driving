@@ -1,6 +1,6 @@
 #include <bachelor/ObjectDetectorNode/ObjectDetector.hpp>
 
-#include <bachelor/DataProtocol/Template/DataSender.hpp>
+#include <bachelor/DataProtocol/DataSender.hpp>
 
 #include <bachelor/ObjectDetectorNode/StopSignProcessor.hpp>
 #include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
@@ -38,7 +38,7 @@ void ObjectDetector::addImageProcessor(IImageProcessor *_processor)
 	const char *InputProcType = _processor->getProcessingName().c_str();
 	for(int i=0; i<m_ImgProcVec.size(); ++i)
 	{
-		if( !strcmp(m_ImgProcVec[i]->getProcessingName().c_str(), InputProcType ) )
+		if( !strcmp(m_ImgProcVec[i]->getProcessingName().c_str(), _processor->getProcessingName().c_str() ) )
 		{
 			std::cout << std::endl << "You can't add this Image Processor." << std::endl;
 			std::cout << "There's is one Image Processor type of: " << InputProcType << ".\n" << std::endl;

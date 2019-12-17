@@ -1,5 +1,5 @@
 #include <bachelor/VideoPlayerNode/VideoPlayer.hpp>
-#include <bachelor/DataProtocol/Template/DataReceiver.hpp>
+#include <bachelor/DataProtocol/DataReceiver.hpp>
 
 #include <iostream>
 #include <sstream>

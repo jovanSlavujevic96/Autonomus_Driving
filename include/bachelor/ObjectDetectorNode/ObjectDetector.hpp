@@ -4,7 +4,7 @@
 #include <memory>
 
 #include <bachelor/Observer/IObserver.hpp> 
-#include <bachelor/DataProtocol/Template/IDataSender.hpp>
+#include <bachelor/DataProtocol/IDataSender.hpp>
 
 #include "IImageProcessor.hpp"
 
