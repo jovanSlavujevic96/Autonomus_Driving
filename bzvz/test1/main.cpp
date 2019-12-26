@@ -420,7 +420,7 @@ void processLanes(std::vector<cv::Vec4i> &lines, cv::Mat &edges, cv::Mat &temp_f
 	cv::line(temp_frame, cvPoint(x, laneL.k.get()*x + laneL.b.get()), 
 		cvPoint(x2, laneL.k.get() * x2 + laneL.b.get()), CV_RGB(255, 0, 255), 2);
 }
-
+/*
 int main(void)
 {
 	cv::VideoCapture inputVideo;
@@ -477,8 +477,8 @@ int main(void)
 	}
     return 0;
 }
+*/
 
-/*
 int main(void)
 {
 	cv::VideoCapture inputVideo;
@@ -543,4 +543,3 @@ int main(void)
 	cvReleaseMemStorage(&houghStorage);
 	return 0;
 }
-*/

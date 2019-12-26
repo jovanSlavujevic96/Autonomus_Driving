@@ -186,12 +186,6 @@ add_dependencies(DisplayNode
 
 ##############################################
 
-
-
-
-
-####BZVZ
-
 add_library(_Lib1
   src/ObjectDetectorNode/SpeedLimitProcessor.cpp
 )
@@ -211,7 +205,7 @@ add_dependencies(LimitProc
 
 ##############################################
 
-add_executable( StopDet bzvz/test3/test_det.cpp )
+add_executable( StopDet bzvz/test3/STOPtest_det.cpp )
 
 target_link_libraries(StopDet
   ${OpenCV_LIBS} 
@@ -238,6 +232,61 @@ add_dependencies(LaneDet
 )
 
 ##############################################
+
+add_executable( trainDigits bzvz/test4/trainDigits.cpp )
+
+target_link_libraries(trainDigits
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(trainDigits 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}s 
+)
+
+##############################################
+
+add_executable( GenData bzvz/test5/GenData/GenData.cpp )
+
+target_link_libraries(GenData
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(GenData 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}s 
+)
+
+##############################################
+
+add_executable( TrainAndTest bzvz/test5/TrainAndTest/TrainAndTest.cpp )
+
+target_link_libraries(TrainAndTest
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(TrainAndTest 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}s 
+)
+
+##############################################
+
+add_executable( aaa bzvz/aaa.cpp )
+
+target_link_libraries(aaa
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(aaa 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}s 
+)
+
 ####BZVZ
 
 
