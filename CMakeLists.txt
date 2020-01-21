@@ -144,7 +144,7 @@ add_dependencies(TimerNode
   ${catkin_EXPORTED_TARGETS}s
 )
 
-############################################## Watchdog 
+############################################## Watchdog node
 
 add_library(_WatchdogLib
   src/WatchdogNode/Watchdog.cpp
@@ -186,108 +186,17 @@ add_dependencies(DisplayNode
 
 ##############################################
 
-add_library(_Lib1
-  src/ObjectDetectorNode/SpeedLimitProcessor.cpp
-)
+add_executable(Lane_Tracking demo/LaneDet.cpp )
 
-add_executable(LimitProc bzvz/test2/speedL.cpp )
-
-target_link_libraries(LimitProc 
-  _Lib1
+target_link_libraries(Lane_Tracking 
   ${OpenCV_LIBS}
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(LimitProc 
+add_dependencies(Lane_Tracking 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}s 
 )
-
-##############################################
-
-add_executable( StopDet bzvz/test3/STOPtest_det.cpp )
-
-target_link_libraries(StopDet
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES} 
-)
-
-add_dependencies(StopDet 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
-)
-
-##############################################
-
-add_executable( LaneDet bzvz/test1/main.cpp )
-
-target_link_libraries(LaneDet
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES} 
-)
-
-add_dependencies(LaneDet 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
-)
-
-##############################################
-
-add_executable( trainDigits bzvz/test4/trainDigits.cpp )
-
-target_link_libraries(trainDigits
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES} 
-)
-
-add_dependencies(trainDigits 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
-)
-
-##############################################
-
-add_executable( GenData bzvz/test5/GenData/GenData.cpp )
-
-target_link_libraries(GenData
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES} 
-)
-
-add_dependencies(GenData 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
-)
-
-##############################################
-
-add_executable( TrainAndTest bzvz/test5/TrainAndTest/TrainAndTest.cpp )
-
-target_link_libraries(TrainAndTest
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES} 
-)
-
-add_dependencies(TrainAndTest 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
-)
-
-##############################################
-
-add_executable( aaa bzvz/aaa.cpp )
-
-target_link_libraries(aaa
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES} 
-)
-
-add_dependencies(aaa 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
-)
-
-####BZVZ
 
 
 #############
