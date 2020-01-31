@@ -12,7 +12,7 @@ private:
     cv::Mat m_InputFrame, m_HelpProcFrame, m_RedHueFrame;
     cv::CascadeClassifier m_StopClassifier;
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
-    std::vector<cv::Rect> m_StopSignContours;   //via Stop.xml Classifier and Red Color Segmentation
+    std::vector<cv::Rect> m_StopSignContours;   //via Neural network and Red Color Segmentation
     std::vector<bool> m_OCRdetection;           //it follows m_StopSignContours and check is some contour Stop sign via OCR 
     bool m_StopDetected;                        //stop detected on frame or not
     unsigned int m_NumOfResizing;
@@ -33,8 +33,8 @@ public:
     virtual void setFrame(sensor_msgs::Image &rawFrame) override;
     virtual sensor_msgs::Image getProcessedFrame(void) const override;
     virtual bool getDetection(void) const override;
-    virtual int getValue(void) const override;
-    virtual std::string getProcessingName(void) const override;
+    virtual std::string getResult(void) const override;
+    virtual std::string getProcessorName(void) const override;
 };
 
 #endif //BACHELOR_OBJECTDETECTORNODE_STOPSIGNPROCESSOR_HPP

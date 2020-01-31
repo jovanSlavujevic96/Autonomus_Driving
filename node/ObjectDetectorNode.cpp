@@ -5,6 +5,7 @@
 
 #include <bachelor/ObjectDetectorNode/StopSignProcessor.hpp>
 #include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
+#include <bachelor/ObjectDetectorNode/RoadLaneProcessor.hpp>
 
 #include <bachelor/Topics.h>
 
@@ -23,9 +24,11 @@ int main(int argc, char **argv)
 	std::unique_ptr<IImageProcessor> StopProc = std::make_unique<StopSignProcessor>();
 	ObjDetObserver->addImageProcessor(StopProc.get() );
 
-	std::unique_ptr<IImageProcessor> LimitProc = std::make_unique<SpeedLimitProcessor>();
+	//std::unique_ptr<IImageProcessor> LimitProc = std::make_unique<SpeedLimitProcessor>();
 	//ObjDetObserver->addImageProcessor(LimitProc.get() );
 
+	//std::unique_ptr<IImageProcessor> LaneProc = std::make_unique<RoadLaneProcessor>();
+	//ObjDetObserver->addImageProcessor(LaneProc.get() );
 
 	while(ros::ok() )
 	{

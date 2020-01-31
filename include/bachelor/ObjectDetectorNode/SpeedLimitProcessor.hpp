@@ -6,12 +6,18 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/text/ocr.hpp>
 
+//#include <tesseract/baseapi.h>
+//#include <leptonica/allheaders.h>
+
+//IN PROGRESS -> DON'T CHECK!!!!
+
 class SpeedLimitProcessor : public IImageProcessor
 {
 private:
     cv::Mat m_InputFrame, m_HelpProcFrame, m_RedHueFrame;
     cv::CascadeClassifier m_SpeedClassifier;
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
+    //std::unique_ptr<tesseract::TessBaseAPI> m_OCR;
     std::vector<cv::Rect> m_SpeedLimitContours;
     std::vector<std::string> m_Strings;
     bool m_SpeedLimitDetected;
@@ -32,8 +38,8 @@ public:
     virtual void setFrame(sensor_msgs::Image &rawFrame) override;
     virtual sensor_msgs::Image getProcessedFrame(void) const override;
     virtual bool getDetection(void) const override;
-    virtual int getValue(void) const override;
-    virtual std::string getProcessingName(void) const override;
+    virtual std::string getResult(void) const override;
+    virtual std::string getProcessorName(void) const override;
 };
 
 #endif //BACHELOR_OBJECTDETECTORNODE_SPEEDLIMITPROCESSOR_HPP

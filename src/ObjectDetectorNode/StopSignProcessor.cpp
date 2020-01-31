@@ -1,7 +1,7 @@
 #include <bachelor/ObjectDetectorNode/StopSignProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
-#define StopClassifierPath "/home/rtrk/myROSworkspace/src/bachelor/classifiers/stop_sign.xml"
+#define StopClassifierPath "/home/rtrk/myWS/src/bachelor/cascade/stop_sign.xml"
 
 void StopSignProcessor::resize(const unsigned int limit)
 {
@@ -196,11 +196,13 @@ void StopSignProcessor::drawLocations(cv::Mat &img, const cv::Scalar color = cv:
 
 StopSignProcessor::StopSignProcessor() : m_NumOfResizing{0}, m_StopDetected{false}
 {
+    /**/
     if( !m_StopClassifier.load(StopClassifierPath) )
     {
         std::cerr << '\t' << "Error loading classifier: " << "\n\t" << StopClassifierPath << std::endl;
         std::exit(EXIT_FAILURE);
     }
+    /**/
     m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "STOP", 1, 6);
 }
 
@@ -237,13 +239,12 @@ bool StopSignProcessor::getDetection(void) const
     return m_StopDetected;
 }
 
-int StopSignProcessor::getValue(void) const
+std::string StopSignProcessor::getResult(void) const
 {
-    return 0;   //I must have this method because of interface (abstract  method)
-                //I don't use it actually
+    return "Stop Sign";
 }
 
-std::string StopSignProcessor::getProcessingName(void) const
+std::string StopSignProcessor::getProcessorName(void) const
 {
-    return "StopSign";
+    return StopSignProcessor::getResult();
 }

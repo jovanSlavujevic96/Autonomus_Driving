@@ -104,11 +104,13 @@ add_dependencies(VideoPlayerNode
 
 add_library(_ObjectDetectorLib
   src/ObjectDetectorNode/ObjectDetector.cpp  #main class (observer class)
+
   src/DataProtocol/DataSender.cpp
   src/DataProtocol/DataReceiver.cpp   #Observer Pattern (subject class)
 
   src/ObjectDetectorNode/StopSignProcessor.cpp  #Stop Sign detecting and drawing on frame
   src/ObjectDetectorNode/SpeedLimitProcessor.cpp  #Speed Limit Sign detecting and drawing on frame 	
+  src/ObjectDetectorNode/RoadLaneProcessor.cpp  #Road Lane detecting and folowing the lanes
 )
 
 add_executable(ObjectDetectorNode node/ObjectDetectorNode.cpp ) 
@@ -186,18 +188,20 @@ add_dependencies(DisplayNode
 
 ##############################################
 
-add_executable(Lane_Tracking demo/LaneDet.cpp )
+add_executable(SpeedLimit node/test/SpeedOCR.cpp ) 
 
-target_link_libraries(Lane_Tracking 
-  ${OpenCV_LIBS}
-  ${catkin_LIBRARIES} 
+target_link_libraries(SpeedLimit 
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES}
+  tesseract
+  lept
 )
 
-add_dependencies(Lane_Tracking 
+add_dependencies(SpeedLimit 
   ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
+  ${catkin_EXPORTED_TARGETS}
 )
-
+##############################################
 
 #############
 ## Install ##

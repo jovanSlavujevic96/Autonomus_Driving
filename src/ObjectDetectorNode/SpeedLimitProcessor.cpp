@@ -1,3 +1,5 @@
+//IN PROGRESS -> DON'T CHECK!!!!
+
 #include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
@@ -176,13 +178,16 @@ void SpeedLimitProcessor::drawLocations(cv::Mat &img, const cv::Scalar color = c
 
 SpeedLimitProcessor::SpeedLimitProcessor() :
     m_OCR{cv::text::OCRTesseract::create(NULL, "eng", "0123456789", 1, 6) },
+    //m_OCR{std::make_unique<tesseract::TessBaseAPI>() },
     m_SpeedLimitDetected{false}, m_NumOfResizing{0}, m_LimitValue{0}
 {
+    /**/
     if( !m_SpeedClassifier.load(SpeedLimitClassifierPath) )
     {
         std::cerr << '\t' << "Error loading classifier: " << "\n\t" << SpeedLimitClassifierPath << std::endl;
         std::exit(EXIT_FAILURE);
     }
+    /**/
 }
 
 void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
@@ -221,12 +226,14 @@ bool SpeedLimitProcessor::getDetection(void) const
     return m_SpeedLimitDetected;
 }
 
-int SpeedLimitProcessor::getValue(void) const
+std::string SpeedLimitProcessor::getResult(void) const
 {
-    return m_LimitValue;
+    std::stringstream ss;
+    ss << m_LimitValue;
+    return ss.str();
 }
 
-std::string SpeedLimitProcessor::getProcessingName(void) const
+std::string SpeedLimitProcessor::getProcessorName(void) const
 {
-    return "SpeedLimit";
+    return "Speed Limit";
 }

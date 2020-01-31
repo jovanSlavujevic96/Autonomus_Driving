@@ -25,8 +25,8 @@ void ObjectDetector::update(sensor_msgs::Image &_frame, Topics _subjTopic)
 		{
 			m_ImgProcVec[i]->setFrame(tmp);
 			tmp = m_ImgProcVec[i]->getProcessedFrame();
-			if( !strcmp(m_ImgProcVec[i]->getProcessingName().c_str(),"StopSign") )
-				m_DataEmiterVideoPlayer->Publish(m_ImgProcVec[i]->getDetection() );
+			if( !strcmp(m_ImgProcVec[i]->getProcessorName().c_str(),"Stop Sign") )
+				m_DataEmiterVideoPlayer->Publish(m_ImgProcVec[i]->getDetection() );	//to freeze the frame at few seconds
 		}
 		
 		m_FrameEmiterDisplay->Publish(tmp);
@@ -35,15 +35,16 @@ void ObjectDetector::update(sensor_msgs::Image &_frame, Topics _subjTopic)
 
 void ObjectDetector::addImageProcessor(IImageProcessor *_processor)
 {
-	const char *InputProcType = _processor->getProcessingName().c_str();
+	const char *InputProcType = _processor->getProcessorName().c_str();
 	for(int i=0; i<m_ImgProcVec.size(); ++i)
 	{
-		if( !strcmp(m_ImgProcVec[i]->getProcessingName().c_str(), _processor->getProcessingName().c_str() ) )
+		if( !strcmp(m_ImgProcVec[i]->getProcessorName().c_str(), _processor->getProcessorName().c_str() ) )
 		{
 			std::cout << std::endl << "You can't add this Image Processor." << std::endl;
 			std::cout << "There's is one Image Processor type of: " << InputProcType << ".\n" << std::endl;
 			return;
 		}
+		
 	}
 	std::cout << "Successfully added Image Processor: " << InputProcType << ".\n";
 	m_ImgProcVec.push_back(_processor);
