@@ -2,6 +2,8 @@
 #include <leptonica/allheaders.h>
 
 #include <iostream>
+#include <memory>
+#include <vector>
 
 #include <opencv2/opencv.hpp>
 
@@ -13,35 +15,52 @@ cv::Mat makeROI(const cv::Mat &inputImage, const cv::Mat &mask);
 cv::Mat redColorSegmentation(const cv::Mat &image);
 std::vector<cv::Rect> getRedHueContours(const cv::Mat &frame);
 void doPreclassification(std::vector<cv::Rect> &redContours);
-std::vector<cv::Rect> doClassification(std::vector<cv::Rect> &Contours, const cv::Mat &inputImage, cv::CascadeClassifier &cascade);
+std::vector<cv::Rect> doClassification(std::vector<cv::Rect> &Contours, const cv::Mat &inputImage, cv::CascadeClassifier *cascade);
+void saveDetected(const std::vector<cv::Rect> &Contours, const cv::Mat &inputImage);
+std::vector<cv::Rect> detectLetters(std::vector<cv::Rect> &speedContours, const cv::Mat &image);
+
 void drawDetected(cv::Mat &image, const std::vector<cv::Rect> &contours, const cv::Scalar &color, const std::string object);
 
 };
 
+#define SpeedLimitCascade1 "/home/rtrk/myWS/src/bachelor/cascade/speed_limit/classifier/cascade.xml"
+#define SpeedLimitCascade2 "/home/rtrk/myWS/src/bachelor/cascade/speed_limit/classifier/cascade2.xml"
+
 int main(void)
 {
     cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
-    if(!cap.isOpened() ) return -1;
+    if(!cap.isOpened() ) 
+        return -1;
 
     const int play = 10, pause = 0;
     int state = play;
     int i=0;
     cv::Mat mask;
-    cv::CascadeClassifier cascade;
+    cv::CascadeClassifier cascade[2];
     {
         std::string Path;
-        bool info;
-        if(! (info = cascade.load(Path = "/home/rtrk/myWS/src/bachelor/cascade/speed_limit.xml")) )
+        if(! cascade[0].load(SpeedLimitCascade1) )
         {
-            std::cout << "cascade load: " << std::boolalpha << info << std::endl;
-            std::cout << "there's no such a classifier in path:\n" << Path << std::endl;
+            std::cout << "there's no such a classifier in path:\n" << SpeedLimitCascade1 << std::endl;
+            return -1;
+        }
+        if(! cascade[1].load(SpeedLimitCascade2) )
+        {
+            std::cout << "there's no such a classifier in path:\n" << SpeedLimitCascade2 << std::endl;
             return -1;
         }
     }
+    /*
+    std::unique_ptr<tesseract::TessBaseAPI> ocr = std::make_unique<tesseract::TessBaseAPI>();
+    ocr->Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
+    ocr->SetPageSegMode(tesseract::PSM_AUTO);
+    */
     while(cap.isOpened() )
     {
         cv::Mat frame;
         cap >> frame;
+        if(frame.empty()) break;
+
         jovan::resize(frame);
 
         if(mask.empty() )
@@ -52,24 +71,32 @@ int main(void)
         auto ROI = jovan::makeROI(frame, mask);
         auto hue = jovan::redColorSegmentation(ROI);
   
-        cv::imshow("hue", hue);
+        //cv::imshow("hue", hue);
         //cv::imshow("ROI", ROI);
 
         auto redConts = jovan::getRedHueContours(hue);
-        jovan::doPreclassification(redConts);
+        //jovan::doPreclassification(redConts);
         auto speedSigns = jovan::doClassification(redConts, ROI, cascade);  //(ROI, cascade); //(redConts, ROI, cascade);
-        
+        //jovan::saveDetected(speedSigns, frame);
+        /*
         for(int i=0; i<redConts.size(); ++i)
         {
             std::stringstream ss;
             ss << "crop" << i;
-            cv::imshow(ss.str(), frame(redConts[i]) );
+            
+            auto image = frame(redConts[i]).clone();
+            cv::imshow(ss.str(), image );
+
+            
+            //ocr->SetImage(image.data, image.size().width, image.size().height, image.channels(), image.step1() );
+            //std::cout << "text: " << ocr->GetUTF8Text() << std::endl;
         }
+        */
 
         jovan::drawDetected(frame, speedSigns, cv::Scalar(0, 0, 255), "Speed Limit");
         cv::imshow("frame", frame); 
 
-        int btn = cv::waitKey(state);
+        auto btn = cv::waitKey(state);
         if(btn == 27 || btn == 'q') break;
         else if(btn == 32 || btn == 'p')
         {
@@ -78,6 +105,9 @@ int main(void)
         }
     }
 
+    cap.release();
+    cv::destroyAllWindows();
+    //ocr->End();
     return 0;
 }
 
@@ -229,8 +259,7 @@ void jovan::doPreclassification(std::vector<cv::Rect> &redContours)
     }
 }
 
-//unsigned int globalIncr=0;
-std::vector<cv::Rect> jovan::doClassification(std::vector<cv::Rect> &Contours, const cv::Mat &inputImage, cv::CascadeClassifier &cascade)
+std::vector<cv::Rect> jovan::doClassification(std::vector<cv::Rect> &Contours, const cv::Mat &inputImage, cv::CascadeClassifier *cascade)
 {
 
     std::vector<cv::Rect> ContoursToResize = Contours;
@@ -253,25 +282,42 @@ std::vector<cv::Rect> jovan::doClassification(std::vector<cv::Rect> &Contours, c
     std::vector<cv::Rect> rects;
     for(int i=0; i<ContoursToResize.size(); ++i)
 	{
-		std::vector<cv::Rect> speedLfound;		
-        cascade.detectMultiScale( inputImage(ContoursToResize[i]), speedLfound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
-		
-		if( !speedLfound.empty() )
+		std::vector<cv::Rect> speedLfound[2];
+        for(int j=0; j<2; j++)
+        {		
+            cascade[j].detectMultiScale( inputImage(ContoursToResize[i]), speedLfound[j], 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
+            if(speedLfound[0].empty() )
+                break;
+        }
+		if( !speedLfound[1].empty() )
 		{   
-            speedLfound[0].x +=  ContoursToResize[i].x;
-            speedLfound[0].y +=  ContoursToResize[i].y;
-    
-            rects.push_back( speedLfound[0] );
+            speedLfound[0][0].x +=  ContoursToResize[i].x;
+            speedLfound[0][0].y +=  ContoursToResize[i].y;
+            rects.push_back( speedLfound[0][0] );
         }
         else
         {
             Contours.erase(Contours.begin() + i); 
             //remove from original image size vector image which is not detected by classifier as speed limit sign
         }
-        
 	}
     return rects;
 }
+
+unsigned int global_incr = 0;
+void jovan::saveDetected(const std::vector<cv::Rect> &Contours, const cv::Mat &inputImage)
+{
+    for(auto rect : Contours)
+    {
+        std::stringstream ss;
+        ss << "/home/rtrk/Desktop/Detected/" << "crop" << global_incr << ".jpg";
+        global_incr++;
+        auto saved = inputImage(rect).clone();
+        cv::imwrite(ss.str(), saved);
+        std::cout << ss.str() << " -> SAVED\n";
+    }
+}
+
 
 void jovan::drawDetected(cv::Mat &image, const std::vector<cv::Rect> &contours, const cv::Scalar &color, const std::string object)
 {

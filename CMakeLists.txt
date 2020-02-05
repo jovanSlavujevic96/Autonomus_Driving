@@ -203,6 +203,47 @@ add_dependencies(SpeedLimit
 )
 ##############################################
 
+add_executable(LaneDet node/test/laneDet.cpp ) 
+
+target_link_libraries(LaneDet 
+  _ObjectDetectorLib
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES}
+)
+
+add_dependencies(LaneDet 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}
+)
+
+##############################################
+
+add_executable(saveFrames node/test/saveFrames.cpp ) 
+
+target_link_libraries(saveFrames 
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES}
+)
+
+add_dependencies(saveFrames 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}
+)
+
+##############################################
+
+add_executable(colorSegmentation node/test/colorSegmentation.cpp ) 
+
+target_link_libraries(colorSegmentation 
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES}
+)
+
+add_dependencies(colorSegmentation 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}
+)
+
 #############
 ## Install ##
 #############
