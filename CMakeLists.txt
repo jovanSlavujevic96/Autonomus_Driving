@@ -203,15 +203,15 @@ add_dependencies(SpeedLimit
 )
 ##############################################
 
-add_executable(LaneDet node/test/laneDet.cpp ) 
+add_executable(detTest node/test/detectionTest.cpp ) 
 
-target_link_libraries(LaneDet 
+target_link_libraries(detTest 
   _ObjectDetectorLib
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(LaneDet 
+add_dependencies(detTest 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}
 )

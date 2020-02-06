@@ -1,15 +1,24 @@
 #include <bachelor/ObjectDetectorNode/RoadLaneProcessor.hpp>
+#include <bachelor/ObjectDetectorNode/StopSignProcessor.hpp>
 
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 
-#define play 30
+#define play 1
 #define pause 0
 
 int main(void)
 {
+    /*
     RoadLaneProcessor lane;
     cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
+    //*/
+    
+    ///*
+    StopSignProcessor stop;
+    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/drivingSchool.mp4");
+    //*/
+
     if(!cap.isOpened() ) 
         return -1;
     
@@ -25,8 +34,15 @@ int main(void)
 		cv_ptr->image = frame;
 		cv_ptr->toImageMsg(img1);
 
+        /*
         lane.setFrame(img1);
         auto data = lane.getProcessedFrame();
+        //*/
+
+        ///*
+        stop.setFrame(img1);
+        auto data = stop.getProcessedFrame();
+        //*/
 
         frame = cv_bridge::toCvCopy(data, "bgr8")->image;
 		cv::imshow("video stream", frame );

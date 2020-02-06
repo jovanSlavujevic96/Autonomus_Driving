@@ -1,224 +1,201 @@
-//IN PROGRESS -> DON'T CHECK!!!!
-
 #include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
-#define SpeedLimitClassifierPath "/home/rtrk/myROSworkspace/src/bachelor/classifiers/speedLimit1.xml"
+#define SpeedLimitClassifierPath "/home/rtrk/myWS/src/bachelor/cascade/speed_limit/classifier/cascade.xml"
 
-void SpeedLimitProcessor::resize(const unsigned int limit)
+void SpeedLimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path)
 {
-    m_NumOfResizing = 0;
-    while(m_HelpProcFrame.rows > limit && m_HelpProcFrame.cols > limit)
+    for(int i=0; i<size; ++i)
     {
-        cv::resize(m_HelpProcFrame, m_HelpProcFrame, cv::Size(m_HelpProcFrame.cols/2, m_HelpProcFrame.rows/2) );
-        ++m_NumOfResizing;
+        if(!cascade[i].load(path[i]))
+        {
+            std::cout << "Error while loading cascade from path: " << path[i] << std::endl;
+            std::exit(-1);
+        }
     }
 }
 
-void SpeedLimitProcessor::crop(void)
+void SpeedLimitProcessor::resize(cv::Mat &image, const float resizeFactor)
 {
-    m_HelpProcFrame = m_HelpProcFrame(cv::Rect(0, 0, m_HelpProcFrame.cols, m_HelpProcFrame.rows/2));
+    cv::resize(image, image, cv::Size(std::round(image.cols*resizeFactor), std::round(image.rows*resizeFactor)) );
 }
 
-void SpeedLimitProcessor::setRedHueFrame(const cv::Mat &sample, cv::Mat &result)
+void SpeedLimitProcessor::createMask(const cv::Mat &image)
 {
-    cv::Mat new_image = sample.clone(), hsv_image;
-	cv::cvtColor(new_image, hsv_image, cv::COLOR_BGR2HSV);
+    cv::Mat mask1 = cv::Mat::zeros(image.size(), CV_8UC1);
+    cv::Mat mask2 = mask1.clone(), mask3 = mask1.clone();
 
-    cv::Mat redMask1, redMask2;
-	cv::inRange(hsv_image, cv::Scalar(0, 25, 98), cv::Scalar(11, 39, 144), redMask1);
-	cv::inRange(hsv_image, cv::Scalar(156, 30, 79), cv::Scalar(179, 93, 151), redMask2);
-	cv::Mat redMask = redMask1 + redMask2;
+    //for specific video
+    int x[4]={0}, y[4]={0};
+    x[0] = 0, y[0] = 430;  
+    x[1] = image.cols, y[1] = y[0];
+    x[2] = x[1], y[2] = image.rows;
+    x[3] = 0, y[3] = y[2];
+  
+    std::vector<cv::Point> pts(4);
+    for(int i=0; i<pts.size(); ++i)
+    {
+        pts[i] = cv::Point(x[i],y[i] );
+    }
+    // Create a binary polygon mask
+    cv::fillConvexPoly(mask1, pts, cv::Scalar(255, 0, 0) );
+
+    x[0] = std::round(image.cols*0.38), y[0] = 430;
+    x[1] = std::round(image.cols*0.57), y[1] = y[0];
+    x[2] = x[1], y[2] = 0;
+    x[3] = x[0], y[3] = y[2];
+  
+    for(int i=0; i<pts.size(); ++i)
+    {
+        pts[i] = cv::Point(x[i],y[i] );
+    }
+    cv::fillConvexPoly(mask2, pts, cv::Scalar(255, 0, 0));
+
+    x[0] = 0, y[0] = 0;
+    x[1] = image.cols, y[1] = y[0];
+    x[2] = x[1], y[2] = 185;
+    x[3] = x[0], y[3] = y[2];
+  
+    for(int i=0; i<pts.size(); ++i)
+    {
+        pts[i] = cv::Point(x[i],y[i] );
+    }
+    cv::fillConvexPoly(mask3, pts, cv::Scalar(255, 0, 0));
     
-    cv::inRange(hsv_image, cv::Scalar(0, 25, 60), cv::Scalar(35, 40, 75), redMask1);
-    cv::inRange(hsv_image, cv::Scalar(169, 28, 78), cv::Scalar(173,90, 152), redMask2);
-    redMask += redMask1 + redMask2;
-
-    cv::inRange(hsv_image, cv::Scalar(157, 28, 58), cv::Scalar(177, 78 , 81 ), redMask1);
-    cv::inRange(hsv_image, cv::Scalar(142, 67, 44), cv::Scalar(165, 102, 104), redMask2);
-    redMask += redMask1 + redMask2;
-    
-    cv::inRange(hsv_image, cv::Scalar(0, 50, 50), cv::Scalar(10, 255, 255), redMask1);
-	cv::inRange(hsv_image, cv::Scalar(160, 50, 50), cv::Scalar(180, 255, 255), redMask2);
-    redMask += redMask1 + redMask2;
-
-    cv::inRange(hsv_image, cv::Scalar(110, 30, 75), cv::Scalar(160, 75, 120), redMask1);
-    redMask += redMask1;
-
-    GaussianBlur( redMask, redMask, cv::Size(9,9), 2, 2 );
-    result = redMask.clone();
+    m_ImageMask = mask1+mask2+mask3;
+    m_ImageMask = ~m_ImageMask;
 }
 
-std::vector<cv::Rect> SpeedLimitProcessor::getRedHueContours(void) const
+cv::Mat SpeedLimitProcessor::makeROI(const cv::Mat &image) const
 {
-    std::vector<cv::Rect> tmpContours;
+    cv::Mat res;
+    image.copyTo(res, m_ImageMask);
+    return res;
+}
 
+void SpeedLimitProcessor::redColorSegmentation(const cv::Mat &sample, cv::Mat1b &result)
+{
+    cv::Mat hsv;
+    cv::cvtColor(sample, hsv, cv::COLOR_BGR2HSV);
+    cv::Mat lowerRedHueRange, upperRedHueRange;
+    cv::inRange(hsv, cv::Scalar(0,100,100), cv::Scalar(10,255,255), lowerRedHueRange );
+    cv::inRange(hsv, cv::Scalar(160,100,100), cv::Scalar(179,255,255), upperRedHueRange);
+    cv::addWeighted(lowerRedHueRange, 1.0f, upperRedHueRange, 1.0f, 0.0f, result);
+    cv::inRange(hsv, cv::Scalar(0, 50, 50), cv::Scalar(10, 255, 255), lowerRedHueRange);
+    cv::addWeighted(result, 1.0f, lowerRedHueRange, 1.0f, 0.0f, result);
+	cv::inRange(hsv, cv::Scalar(160, 50, 50), cv::Scalar(180, 255, 255), lowerRedHueRange);
+    cv::addWeighted(result, 1.0f, lowerRedHueRange, 1.0f, 0.0f, result);
+    cv::inRange(hsv, cv::Scalar(140, 100, 30),cv::Scalar(160, 160, 60), lowerRedHueRange);
+    cv::addWeighted(result, 1.0f, lowerRedHueRange, 1.0f, 0.0f, result);
+}
+
+std::vector<cv::Rect> SpeedLimitProcessor::getRedContours(const cv::Mat1b &hueImage) const
+{
+    cv::Mat blured;
+	cv::GaussianBlur(hueImage, blured, cv::Size(9,9), 2,2);
+
+    std::vector<cv::Rect> redRects;
     std::vector<std::vector<cv::Point> > contours;
 	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours(m_RedHueFrame, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+	cv::findContours(blured, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
     
     std::vector<std::vector<cv::Point> > contours_poly(contours.size() );
 	for(int i = 0; i < contours.size(); ++i)
+    {
 		cv::approxPolyDP((cv::Mat)contours[i], contours_poly[i], 3, true);
-
+    }
     for(int i = 0; i < contours_poly.size(); ++i)
-		if (cv::contourArea(contours_poly[i]) >= 500 && contours_poly[i].size() >= 8 )
-        {    
-            cv::Rect tmp = cv::boundingRect(contours_poly[i]);
-            tmp.y += (tmp.height/8);
-            tmp.height -= 2*tmp.height/8;
-            tmp.x += (tmp.width/20);
-            tmp.width -= 2*tmp.width/20;
-
-            tmpContours.push_back(tmp);
-        }
-
-    for(int i = 0; i < tmpContours.size(); ++i)
-    {
-        cv::Rect A = tmpContours[i];
-        for(int j = 0; j < tmpContours.size(); ++j)
-        {
-            cv::Rect B = tmpContours[j];
-            if(A.x > B.x && A.width < B.width && (A.x + A.width) < (B.x + B.width) &&
-               A.y > B.y && A.height < B.height && (A.y + A.height) < (B.y + B.height) )
-                tmpContours.erase(tmpContours.begin() + j);
-        }
-    }
-    return tmpContours; 
-}
-
-std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitContours(void) 
-{
-    auto redHueResizedContours = SpeedLimitProcessor::getRedHueContours();
-    std::vector<cv::Rect> tmp;
-
-    for(int i=0; i<redHueResizedContours.size(); ++i)
-        for(int rectIncrVal = redHueResizedContours[i].width/4; rectIncrVal >= 1; --rectIncrVal)
-            if( (redHueResizedContours[i].x - rectIncrVal) >= 0 && (redHueResizedContours[i].y - rectIncrVal) >= 0 && 
-                (redHueResizedContours[i].x + redHueResizedContours[i].width  + 2*rectIncrVal) <= m_HelpProcFrame.size().width && 
-                (redHueResizedContours[i].y + redHueResizedContours[i].height + 2*rectIncrVal) <= m_HelpProcFrame.size().height   )
-            {
-                redHueResizedContours[i].x -= rectIncrVal;
-                redHueResizedContours[i].y -= rectIncrVal;
-                redHueResizedContours[i].width  += 2*rectIncrVal;
-                redHueResizedContours[i].height += 2*rectIncrVal;	//increase size of cropped rectangle from the frame
-                break;
-            }
-
-    for(int i=0; i<redHueResizedContours.size(); ++i)
 	{
-		std::vector<cv::Rect> speedLFound;		
-        m_SpeedClassifier.detectMultiScale( m_HelpProcFrame(redHueResizedContours[i]), speedLFound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
-		
-		if( !speedLFound.empty() )
-		{
-			speedLFound[0].x +=  redHueResizedContours[i].x;
-			speedLFound[0].y +=  redHueResizedContours[i].y;
-        
-			tmp.push_back( speedLFound[0] );
-		}	
-	}
-    return tmp;
+    	if (cv::contourArea(contours_poly[i]) >= 250 && contours_poly[i].size() <= 50 )
+        {
+            redRects.push_back(cv::boundingRect(contours_poly[i]) );
+        }
+    }
+    return redRects; 
 }
 
-void SpeedLimitProcessor::setContoursByOCRcheckAndStrings(void) 
-{
-    auto samples = SpeedLimitProcessor::getSpeedLimitContours();
-
-    for(unsigned int i=0; i<samples.size(); ++i)
+void SpeedLimitProcessor::eraseFromContour(std::vector<cv::Rect> &contours)
+{           
+    for(int j=0; j<contours.size(); ++j)
     {
-        std::string output = m_OCR->run( m_HelpProcFrame(samples[i]), 1, 0);
-
-        int incr=0; 
-        const int length = strlen(output.c_str() );
-        for(unsigned int j=0; j<length; ++j)
+        if( (contours[j].size().height < 30 || contours[j].size().height > 80) || (contours[j].size().width < 30 || contours[j].size().width > 80) )
         {
-            if(output.c_str()[j] >= 48 && output.c_str()[j] <= 57)
-                ++incr;
-            else
-                break;
+            contours.erase(contours.begin() + j); 
         }
-        if(length > 1 && incr == length )
+    }
+}
+
+std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitContours(const cv::Mat &image, std::vector<cv::Rect> &contours)
+{
+    for(int i=0; i<contours.size(); ++i)
+    {
+        auto *contour = &contours[i];
+        auto limit = std::round(contour->width/3);
+        for(int incrVal = limit; incrVal >= 1; --incrVal)
         {
-            m_Strings.push_back(output);
-            for(int k=0; k<m_NumOfResizing; ++k)
+            if( (contour->x-incrVal)>=0 && (contour->y-incrVal)>=0 && 
+                (contour->x+contour->width+2*incrVal)<=image.cols && 
+                (contour->y+contour->height+2*incrVal)<=image.rows )
             {
-                samples[i].x *= 2;
-                samples[i].y *= 2;
-                samples[i].width *= 2;
-                samples[i].height *= 2;
+                contour->x -= incrVal;
+                contour->y -= incrVal;
+                contour->width += 2*incrVal;
+                contour->height += 2*incrVal;
+                break;
             }
-            m_SpeedLimitContours.push_back(samples[i]);
         }
     }
+
+    std::vector<cv::Rect> speedRects;
+    for(int i=0; i<contours.size(); ++i)
+	{
+		std::vector<cv::Rect> speedLfound;
+        m_SpeedClassifier->detectMultiScale( image(contours[i]), speedLfound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
+		if( !speedLfound.empty() )
+		{   
+            speedLfound[0].x +=  contours[i].x;
+            speedLfound[0].y +=  contours[i].y;
+            speedRects.push_back( speedLfound[0] );
+        }
+	}
+    return speedRects;
 }
 
-void SpeedLimitProcessor::drawLocations(cv::Mat &img, const cv::Scalar color = cv::Scalar(0,255,255) )
+SpeedLimitProcessor::SpeedLimitProcessor() : m_SpeedLimitDetected{false}, m_SpeedClassifier{std::make_unique<cv::CascadeClassifier>()}
 {
-    if(!m_SpeedLimitContours.size() || !m_Strings.size())
-    {
-        m_SpeedLimitDetected = false;
-        m_LimitValue = 0;
-        return;
-    }
-    cv::Mat img1 = img.clone();
-        
-    for(unsigned int i=0; i<m_SpeedLimitContours.size(); ++i)
-        cv::rectangle(img, m_SpeedLimitContours[i], color, -1);
-    
-    cv::addWeighted(img1, 0.8, img, 0.2, 0, img);
-    for(unsigned int i = 0 ; i <m_SpeedLimitContours.size(); ++i) 
-    {
-        cv::rectangle(img, m_SpeedLimitContours[i], color, 3);
-        cv::putText(img, m_Strings[i], cv::Point(m_SpeedLimitContours[i].x+1, m_SpeedLimitContours[i].y+8), cv::FONT_HERSHEY_DUPLEX, 0.3, color, 1);
-    }
-    m_SpeedLimitDetected = true;
-    m_LimitValue = std::stoi(m_Strings[0] );
-}
-
-SpeedLimitProcessor::SpeedLimitProcessor() :
-    m_OCR{cv::text::OCRTesseract::create(NULL, "eng", "0123456789", 1, 6) },
-    //m_OCR{std::make_unique<tesseract::TessBaseAPI>() },
-    m_SpeedLimitDetected{false}, m_NumOfResizing{0}, m_LimitValue{0}
-{
-    /**/
-    if( !m_SpeedClassifier.load(SpeedLimitClassifierPath) )
-    {
-        std::cerr << '\t' << "Error loading classifier: " << "\n\t" << SpeedLimitClassifierPath << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-    /**/
+    const std::string Path = SpeedLimitClassifierPath;
+    SpeedLimitProcessor::loadCascade(m_SpeedClassifier.get(), 1, &Path);
 }
 
 void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
 {
-    m_Strings.clear();
-    m_SpeedLimitContours.clear();
-
-    m_InputFrame = cv_bridge::toCvCopy(rawFrame, "bgr8")->image.clone();
-    m_HelpProcFrame = m_InputFrame.clone();
-
-    SpeedLimitProcessor::resize(600);
-    //SpeedLimitProcessor::crop(); //use only upper half of the image(frame)!
+    m_Frame = cv_bridge::toCvCopy(rawFrame, "bgr8")->image.clone();
+    auto helpImage = m_Frame.clone();
+    SpeedLimitProcessor::resize(helpImage, 0.6f);
     
-    SpeedLimitProcessor::setRedHueFrame(m_HelpProcFrame, m_RedHueFrame);
-    SpeedLimitProcessor::setContoursByOCRcheckAndStrings();
-    SpeedLimitProcessor::drawLocations(m_InputFrame);
+    if(m_ImageMask.empty() )
+    {
+        SpeedLimitProcessor::createMask(helpImage);
+    }
 
-    //cv::resize(m_InputFrame, m_InputFrame, cv::Size(m_InputFrame.cols*0.75, m_InputFrame.rows*0.75) );
-    
+    auto imageROI = SpeedLimitProcessor::makeROI(helpImage);
+    cv::Mat1b redHueImage;  //binary mask
+    SpeedLimitProcessor::redColorSegmentation(imageROI, redHueImage);
+    auto contours =  SpeedLimitProcessor::getRedContours(redHueImage);
+    //SpeedLimitProcessor::eraseFromContour(contours);
+    contours = SpeedLimitProcessor::getSpeedLimitContours(helpImage, contours);
+
 }
 
 sensor_msgs::Image SpeedLimitProcessor::getProcessedFrame(void) const
 {
     cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
     cv_ptr->encoding = "bgr8";
-	cv_ptr->image = m_InputFrame;
-	
-    sensor_msgs::Image img1;
-	cv_ptr->toImageMsg(img1);
+	cv_ptr->image = m_Frame;
 
-    return img1;
+    sensor_msgs::Image image1;
+	cv_ptr->toImageMsg(image1);
+    return image1;
 }
 
 bool SpeedLimitProcessor::getDetection(void) const
@@ -228,12 +205,10 @@ bool SpeedLimitProcessor::getDetection(void) const
 
 std::string SpeedLimitProcessor::getResult(void) const
 {
-    std::stringstream ss;
-    ss << m_LimitValue;
-    return ss.str();
+
 }
 
 std::string SpeedLimitProcessor::getProcessorName(void) const
 {
-    return "Speed Limit";
+    return "Speed Limit Processor";
 }

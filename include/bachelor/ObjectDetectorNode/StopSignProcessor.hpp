@@ -9,22 +9,21 @@
 class StopSignProcessor : public IImageProcessor
 {
 private:
-    cv::Mat m_InputFrame, m_HelpProcFrame, m_RedHueFrame;
-    cv::CascadeClassifier m_StopClassifier;
+    cv::Mat m_Frame;
+    std::unique_ptr<cv::CascadeClassifier> m_StopClassifier;
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
-    std::vector<cv::Rect> m_StopSignContours;   //via Neural network and Red Color Segmentation
-    std::vector<bool> m_OCRdetection;           //it follows m_StopSignContours and check is some contour Stop sign via OCR 
-    bool m_StopDetected;                        //stop detected on frame or not
-    unsigned int m_NumOfResizing;
+    bool m_StopDetected;     /*stop detected on frame or not*/
 
-    void resize(const unsigned int limit);
-    void crop(void);
-    void setRedHueFrame(const cv::Mat &sample, cv::Mat &result);
-    std::vector<cv::Rect> getRedHueContours(void) const;
-    void setStopSignContours(void);
-    std::vector<cv::Mat> getPreprocessedImagesForOCR(void);
-    void setOCRdetection(void);
-   	void drawLocations(cv::Mat &img, const cv::Scalar color, const std::string text);
+    void loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path);
+    int resize(cv::Mat &image, const int limit);
+    void crop(cv::Mat &image);
+    void redColorSegmentation(const cv::Mat &sample, cv::Mat &result);
+    std::vector<cv::Rect> getRedContours(const cv::Mat1b &hueImage) const;
+    std::vector<cv::Rect> getStopSignContours(const cv::Mat &image, std::vector<cv::Rect> &contours);
+    std::vector<cv::Mat> getTextImagesForOCR(const int numOfResizing, std::vector<cv::Rect> &contours);
+    std::vector<bool> getDetectionFromOCR(const std::vector<cv::Mat> &images);
+   	void drawLocations(cv::Mat &img, const std::vector<bool> &detetcion, const std::vector<cv::Rect> &contours,
+        const cv::Scalar color, const std::string text);
 
 public:
     StopSignProcessor(); 

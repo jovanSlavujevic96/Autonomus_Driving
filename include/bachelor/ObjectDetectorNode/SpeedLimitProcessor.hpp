@@ -6,30 +6,23 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/text/ocr.hpp>
 
-//#include <tesseract/baseapi.h>
-//#include <leptonica/allheaders.h>
-
-//IN PROGRESS -> DON'T CHECK!!!!
-
 class SpeedLimitProcessor : public IImageProcessor
 {
 private:
-    cv::Mat m_InputFrame, m_HelpProcFrame, m_RedHueFrame;
-    cv::CascadeClassifier m_SpeedClassifier;
-    cv::Ptr<cv::text::OCRTesseract> m_OCR;
-    //std::unique_ptr<tesseract::TessBaseAPI> m_OCR;
-    std::vector<cv::Rect> m_SpeedLimitContours;
-    std::vector<std::string> m_Strings;
+    std::unique_ptr<cv::CascadeClassifier> m_SpeedClassifier;
+    cv::Mat m_Frame, m_ImageMask;
     bool m_SpeedLimitDetected;
-    unsigned int m_LimitValue, m_NumOfResizing;
 
-    void resize(const unsigned int limit);
-    void crop(void);
-    void setRedHueFrame(const cv::Mat &sample, cv::Mat &result);
-    std::vector<cv::Rect> getRedHueContours(void) const;
-    std::vector<cv::Rect> getSpeedLimitContours(void);
-    void setContoursByOCRcheckAndStrings(void);
-    void drawLocations(cv::Mat &img, const cv::Scalar color );
+    void loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path);
+    void resize(cv::Mat &image, const float resizeFactor);
+    void createMask(const cv::Mat &image);
+    cv::Mat makeROI(const cv::Mat &image) const;
+    void redColorSegmentation(const cv::Mat &sample, cv::Mat1b &result);
+    std::vector<cv::Rect> getRedContours(const cv::Mat1b &hueImage) const;
+    void eraseFromContour(std::vector<cv::Rect> &contours);
+    std::vector<cv::Rect> getSpeedLimitContours(const cv::Mat &image, std::vector<cv::Rect> &contours);
+    void drawLocations(cv::Mat &img, const std::vector<cv::Rect> &contours,
+        const cv::Scalar color, const std::string text);
 
 public:
     SpeedLimitProcessor();
