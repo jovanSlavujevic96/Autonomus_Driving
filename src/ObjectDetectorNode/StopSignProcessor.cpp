@@ -104,7 +104,7 @@ std::vector<cv::Rect> StopSignProcessor::getDetectedStopContours(const cv::Mat &
     for(int i=0; i<contours.size(); ++i)
 	{
 		std::vector<cv::Rect> stopFound;
-        m_StopClassifier->detectMultiScale( image(contours[i]), stopFound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
+        m_StopClassifier.detectMultiScale( image(contours[i]), stopFound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
 		if( !stopFound.empty() )
 		{
 			stopFound[0].x +=  contours[i].x;
@@ -191,7 +191,7 @@ std::vector<bool> StopSignProcessor::getDetectionFromOCR(const std::vector<cv::M
 }
 
 void StopSignProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detetcion, const std::vector<cv::Rect> &contours,
-    const cv::Scalar color = cv::Scalar(0, 0, 255), const std::string text = "STOP")
+    const cv::Scalar colorEdge = cv::Scalar(0, 0, 255), const cv::Scalar colorText = cv::Scalar(255, 0, 255), const std::string text = "STOP")
 {
     if(contours.empty() )
     {
@@ -215,7 +215,7 @@ void StopSignProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &d
     {
         if(detetcion[i] )
 	    {
-            cv::rectangle(image, contours[i], color, -1);
+            cv::rectangle(image, contours[i], colorEdge, -1);
         }
     }
 	cv::addWeighted(helpImage, 0.8, image, 0.2, 0, image);
@@ -223,17 +223,18 @@ void StopSignProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &d
     {
         if(detetcion[i] )
         {
-            cv::rectangle(image, contours[i], color, 3);
-            cv::putText(image, text, cv::Point(contours[i].x+1, contours[i].y+8), cv::FONT_HERSHEY_DUPLEX, 0.3, color, 1);
+            cv::rectangle(image, contours[i], colorEdge, 3);
+            cv::putText(image, text, cv::Point(contours[i].x+1, (contours[i].width+contours[i].y+18)), 
+                cv::FONT_HERSHEY_DUPLEX, 0.7f, colorText, 1);
         }
     }
     m_StopDetected = true;
 }
 
-StopSignProcessor::StopSignProcessor() : m_StopDetected{false}, m_StopClassifier{std::make_unique<cv::CascadeClassifier>() }
+StopSignProcessor::StopSignProcessor() : m_StopDetected{false}
 {
     const std::string Path = StopClassifierPath;
-    StopSignProcessor::loadCascade(m_StopClassifier.get(), 1, &Path);
+    StopSignProcessor::loadCascade(&m_StopClassifier, 1, &Path);
     m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "STOP", 1, 6);
 }
 
@@ -251,7 +252,7 @@ void StopSignProcessor::setFrame(sensor_msgs::Image &rawFrame)
     auto images = StopSignProcessor::getTextImagesForOCR(numOfResizing, contours);
     auto detection = StopSignProcessor::getDetectionFromOCR(images);
     StopSignProcessor::drawLocations(m_Frame, detection, contours);
-    cv::resize(m_Frame, m_Frame, cv::Size(m_Frame.cols*0.75, m_Frame.rows*0.75));
+    //cv::resize(m_Frame, m_Frame, cv::Size(m_Frame.cols*0.75, m_Frame.rows*0.75));
 }
 
 sensor_msgs::Image StopSignProcessor::getProcessedFrame(void) const

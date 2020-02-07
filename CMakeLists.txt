@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.16.4)
 project(bachelor)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -98,7 +98,7 @@ target_link_libraries(VideoPlayerNode
 
 add_dependencies(VideoPlayerNode 
   ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s
+  ${catkin_EXPORTED_TARGETS}
 )
 ############################################## ObjectDetector_node
 
@@ -143,7 +143,7 @@ target_link_libraries(TimerNode
 
 add_dependencies(TimerNode 
   ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s
+  ${catkin_EXPORTED_TARGETS}
 )
 
 ############################################## Watchdog node
@@ -162,7 +162,7 @@ target_link_libraries(WatchdogNode
 
 add_dependencies(WatchdogNode 
   ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
+  ${catkin_EXPORTED_TARGETS}
 )
 
 ############################################## Display node
@@ -183,7 +183,7 @@ target_link_libraries(DisplayNode
 
 add_dependencies(DisplayNode 
   ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}s 
+  ${catkin_EXPORTED_TARGETS}
 )
 
 ##############################################

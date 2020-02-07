@@ -5,7 +5,7 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 
-#define play 1
+#define play 30
 #define pause 0
 
 int main(void)
@@ -14,15 +14,15 @@ int main(void)
     RoadLaneProcessor lane;
     //cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
     //*/
-    
-    /*
-    StopSignProcessor stop;
-    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/drivingSchool.mp4");
-    //*/
 
     ///*
     SpeedLimitProcessor speed;
-    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
+    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/OUTFILE-1.mp4");
+    //*/
+
+    /*
+    StopSignProcessor stop;
+    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/drivingSchool.mp4");
     //*/
 
     if(!cap.isOpened() ) 
@@ -35,6 +35,7 @@ int main(void)
     {
         cv::Mat frame;
         cap >> frame;
+        if(frame.empty() ) break;
 
         cv_ptr->encoding = "bgr8";
 		cv_ptr->image = frame;
@@ -42,25 +43,25 @@ int main(void)
 
         ///*
         speed.setFrame(img1);
-        auto data = speed.getProcessedFrame();
+        img1 = speed.getProcessedFrame();
         //*/
 
         ///*
-        lane.setFrame(data);
-        data = lane.getProcessedFrame();
+        lane.setFrame(img1);
+        img1 = lane.getProcessedFrame();
         //*/
 
         /*
         stop.setFrame(img1);
-        auto data = stop.getProcessedFrame();
+        img1 = stop.getProcessedFrame();
         //*/
 
-        frame = cv_bridge::toCvCopy(data, "bgr8")->image;
+        frame = cv_bridge::toCvCopy(img1, "bgr8")->image;
 		cv::imshow("video stream", frame );
 
         auto btn = cv::waitKey(state);
-        if(btn == 27 || btn == 'q') break;
-        else if(btn == 32 || btn == 'p')
+        if(btn == 27 || btn == 'q' || btn == 'Q') break;
+        else if(btn == 32 || btn == 'p' || btn == 'P')
         {
             if(state == play) state = pause;
             else state = play;

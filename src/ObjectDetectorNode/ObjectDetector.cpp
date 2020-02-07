@@ -25,7 +25,7 @@ void ObjectDetector::update(sensor_msgs::Image &_frame, Topics _subjTopic)
 		{
 			m_ImgProcVec[i]->setFrame(tmp);
 			tmp = m_ImgProcVec[i]->getProcessedFrame();
-			if( !strcmp(m_ImgProcVec[i]->getProcessorName().c_str(),"Stop Sign") )
+			if( !strcmp(m_ImgProcVec[i]->getProcessorName().c_str(),"Stop Sign Processor") )
 				m_DataEmiterVideoPlayer->Publish(m_ImgProcVec[i]->getDetection() );	//to freeze the frame at few seconds
 		}
 		
@@ -35,7 +35,7 @@ void ObjectDetector::update(sensor_msgs::Image &_frame, Topics _subjTopic)
 
 void ObjectDetector::addImageProcessor(IImageProcessor *_processor)
 {
-	const char *InputProcType = _processor->getProcessorName().c_str();
+	const std::string InputProcType = _processor->getProcessorName();
 	for(int i=0; i<m_ImgProcVec.size(); ++i)
 	{
 		if( !strcmp(m_ImgProcVec[i]->getProcessorName().c_str(), _processor->getProcessorName().c_str() ) )

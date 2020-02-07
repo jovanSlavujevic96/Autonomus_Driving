@@ -10,7 +10,7 @@ class SpeedLimitProcessor : public IImageProcessor
 {
 private:
     cv::CascadeClassifier m_SpeedClassifier;
-    cv::CascadeClassifier m_LimitRecognizeClassifier[2];
+    cv::CascadeClassifier m_LimitRecognizeClassifier[1];
     cv::Mat m_Frame, m_ImageMask;
     bool m_SpeedLimitDetected;
     int m_SpeedValue;
@@ -23,9 +23,9 @@ private:
     std::vector<cv::Rect> getRedContours(const cv::Mat1b &hueImage) const;
     void eraseFromContour(std::vector<cv::Rect> &contours);
     std::vector<cv::Rect> getDetectedSpeedLimitContours(const cv::Mat &image, std::vector<cv::Rect> &contours);
-    std::vector<std::string> getRecognizedClassifier(const cv::Mat &image);
-    void drawLocations(cv::Mat &image, std::vector<cv::Rect> &contours, const float resizeFactor,
-        const cv::Scalar color, const std::string text);
+    std::vector<cv::Rect> getSpeedLimitValues(const cv::Mat &image, const std::vector<cv::Rect> &contours);
+    void drawLocations(cv::Mat &image, std::vector<cv::Rect> &contours, const float resizeFactor, 
+        const cv::Scalar colorEdge, const cv::Scalar colorText, const std::string text);
 
 public:
     SpeedLimitProcessor();

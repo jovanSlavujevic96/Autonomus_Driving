@@ -10,7 +10,7 @@ class StopSignProcessor : public IImageProcessor
 {
 private:
     cv::Mat m_Frame;
-    std::unique_ptr<cv::CascadeClassifier> m_StopClassifier;
+    cv::CascadeClassifier m_StopClassifier;
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
     bool m_StopDetected;     /*stop detected on frame or not*/
 
@@ -23,7 +23,7 @@ private:
     std::vector<cv::Mat> getTextImagesForOCR(const int numOfResizing, std::vector<cv::Rect> &contours);
     std::vector<bool> getDetectionFromOCR(const std::vector<cv::Mat> &images);
    	void drawLocations(cv::Mat &image, const std::vector<bool> &detetcion, const std::vector<cv::Rect> &contours,
-        const cv::Scalar color, const std::string text);
+        const cv::Scalar colorEdge, const cv::Scalar colorText, const std::string text);
 
 public:
     StopSignProcessor(); 

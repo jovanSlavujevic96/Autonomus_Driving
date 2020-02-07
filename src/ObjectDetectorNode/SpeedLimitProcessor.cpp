@@ -1,7 +1,9 @@
 #include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
-#define SpeedLimitClassifierPath "/home/rtrk/myWS/src/bachelor/cascade/speed_limit/classifier/cascade.xml"
+#define SpeedCascadesPath "/home/rtrk/myWS/src/bachelor/cascade/speed_limit/classifier/"
+#define SpeedLimitClassifier SpeedCascadesPath "cascade.xml"
+#define SpeedLimit80Classifier SpeedCascadesPath "cascade_80.xml"
 
 void SpeedLimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path)
 {
@@ -11,6 +13,10 @@ void SpeedLimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int 
         {
             std::cout << "Error while loading cascade from path: " << path[i] << std::endl;
             std::exit(-1);
+        }
+        else
+        {
+            std::cout << "Successfully loaded classifier from path: " << path[i] << std::endl;
         }
     }
 }
@@ -160,8 +166,40 @@ std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const c
     return speedRects;
 }
 
+std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitValues(const cv::Mat &image, const std::vector<cv::Rect> &contours)
+{
+    const int possibleLimitVals[5] = {80,40,50,100,130};
+    std::vector<cv::Rect> limits;
+    bool assign = true;
+    for(int i=0; i<contours.size(); ++i)
+    {
+        bool info;
+        int whichCascade = 0;
+        for(int j=0; j<1; j++)
+        {	
+            whichCascade = j;
+            std::vector<cv::Rect> digitFound;	
+            m_LimitRecognizeClassifier[j].detectMultiScale( image(contours[i]), digitFound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
+            if(! (info = digitFound.empty()) )
+            {
+                break;
+            }
+        }
+		if( !info )
+		{   
+            limits.push_back(contours[i]);
+            if(assign)
+            {
+                assign = false;
+                m_SpeedValue = possibleLimitVals[whichCascade];
+            }
+        }
+    }
+    return limits;
+}
+
 void SpeedLimitProcessor::drawLocations(cv::Mat &image, std::vector<cv::Rect> &contours, const float resizeFactor,
-    const cv::Scalar color = cv::Scalar(255, 0, 0), const std::string text = "SPEED LIMIT")
+    const cv::Scalar colorEdge = cv::Scalar(255,0,0), const cv::Scalar colorText = cv::Scalar(255,255,0), const std::string text = "SPEED LIMIT ")
 {
     if(contours.empty() )
     {
@@ -179,22 +217,24 @@ void SpeedLimitProcessor::drawLocations(cv::Mat &image, std::vector<cv::Rect> &c
     cv::Mat helpImage = image.clone();
 	for(unsigned int i=0; i<contours.size(); ++i)
     {
-        cv::rectangle(image, contours[i], color, -1);
+        cv::rectangle(image, contours[i], colorEdge, -1);
     }
 	cv::addWeighted(helpImage, 0.8f, image, 0.2f, 0, image);
 	for(unsigned int i = 0 ; i <contours.size(); ++i) 
     {
-        cv::rectangle(image, contours[i], color, 3);
-        cv::putText(image, text, cv::Point(contours[i].x+1, (contours[i].y+contours[i].height+2)), 
-            cv::FONT_HERSHEY_DUPLEX, 0.7f, cv::Scalar(255,255,0), 2);
+        cv::rectangle(image, contours[i], colorEdge, 3);
+        cv::putText(image, (text+std::to_string(m_SpeedValue) ), cv::Point(contours[i].x+1, (contours[i].y+contours[i].height+18)), 
+            cv::FONT_HERSHEY_DUPLEX, 0.7f, colorText, 2);
     }
     m_SpeedLimitDetected = true;
 }
 
 SpeedLimitProcessor::SpeedLimitProcessor() : m_SpeedLimitDetected{false}
 {
-    const std::string Path = SpeedLimitClassifierPath;
+    const std::string Path = SpeedLimitClassifier;
     SpeedLimitProcessor::loadCascade(&m_SpeedClassifier, 1, &Path);
+    const std::string Paths[1] = {SpeedLimit80Classifier};
+    SpeedLimitProcessor::loadCascade(m_LimitRecognizeClassifier, 1, Paths);
 }
 
 void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
@@ -214,6 +254,7 @@ void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
     auto contours =  SpeedLimitProcessor::getRedContours(redHueImage);
     //SpeedLimitProcessor::eraseFromContour(contours);
     contours = SpeedLimitProcessor::getDetectedSpeedLimitContours(helpImage, contours);
+    contours = SpeedLimitProcessor::getSpeedLimitValues(helpImage, contours);
     SpeedLimitProcessor::drawLocations(m_Frame, contours, 0.6f);
 }
 
