@@ -1,5 +1,6 @@
 #include <bachelor/ObjectDetectorNode/RoadLaneProcessor.hpp>
 #include <bachelor/ObjectDetectorNode/StopSignProcessor.hpp>
+#include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
 
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -9,14 +10,19 @@
 
 int main(void)
 {
-    /*
+    ///*
     RoadLaneProcessor lane;
-    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
+    //cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
     //*/
     
-    ///*
+    /*
     StopSignProcessor stop;
     cv::VideoCapture cap("/home/rtrk/Videos/testVideos/drivingSchool.mp4");
+    //*/
+
+    ///*
+    SpeedLimitProcessor speed;
+    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
     //*/
 
     if(!cap.isOpened() ) 
@@ -34,12 +40,17 @@ int main(void)
 		cv_ptr->image = frame;
 		cv_ptr->toImageMsg(img1);
 
-        /*
-        lane.setFrame(img1);
-        auto data = lane.getProcessedFrame();
+        ///*
+        speed.setFrame(img1);
+        auto data = speed.getProcessedFrame();
         //*/
 
         ///*
+        lane.setFrame(data);
+        data = lane.getProcessedFrame();
+        //*/
+
+        /*
         stop.setFrame(img1);
         auto data = stop.getProcessedFrame();
         //*/

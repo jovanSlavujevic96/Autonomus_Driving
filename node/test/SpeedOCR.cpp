@@ -77,9 +77,9 @@ int main(void)
         auto Conts = jovan::getRedHueContours(hue);
         //jovan::doPreclassification(redConts);
         Conts = jovan::doClassification(Conts, ROI, &cascade_speedLimit, 1);  
-        Conts = jovan::detectDigits(Conts, frame, &cascade_80speedLimit, 1);
+        //Conts = jovan::detectDigits(Conts, frame, &cascade_80speedLimit, 1);
         
-        //jovan::saveDetected(speedSigns, frame);
+        //jovan::saveDetected(Conts, frame);
         /*
         for(int i=0; i<redConts.size(); ++i)
         {
@@ -359,7 +359,6 @@ std::vector<cv::Rect> jovan::detectDigits(const std::vector<cv::Rect> &contours,
     return rects;
 }
 
-
 unsigned int global_incr = 0;
 void jovan::saveDetected(const std::vector<cv::Rect> &contours, const cv::Mat &img)
 {
@@ -373,7 +372,6 @@ void jovan::saveDetected(const std::vector<cv::Rect> &contours, const cv::Mat &i
         std::cout << ss.str() << " -> SAVED\n";
     }
 }
-
 
 void jovan::drawDetected(cv::Mat &img, const std::vector<cv::Rect> &contours, const cv::Scalar &color, const std::string object)
 {

@@ -80,7 +80,7 @@ std::vector<cv::Rect> StopSignProcessor::getRedContours(const cv::Mat1b &hueImag
     return redRects; 
 }
 
-std::vector<cv::Rect> StopSignProcessor::getStopSignContours(const cv::Mat &image, std::vector<cv::Rect> &contours)
+std::vector<cv::Rect> StopSignProcessor::getDetectedStopContours(const cv::Mat &image, std::vector<cv::Rect> &contours)
 {
     for(int i=0; i<contours.size(); ++i)
     {
@@ -190,9 +190,14 @@ std::vector<bool> StopSignProcessor::getDetectionFromOCR(const std::vector<cv::M
     return detection;
 }
 
-void StopSignProcessor::drawLocations(cv::Mat &img, const std::vector<bool> &detetcion, const std::vector<cv::Rect> &contours,
+void StopSignProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detetcion, const std::vector<cv::Rect> &contours,
     const cv::Scalar color = cv::Scalar(0, 0, 255), const std::string text = "STOP")
 {
+    if(contours.empty() )
+    {
+        m_StopDetected = false;
+		return;
+    }
     for(int i=0; i<detetcion.size(); ++i)
     {
         if(detetcion[i])
@@ -205,26 +210,21 @@ void StopSignProcessor::drawLocations(cv::Mat &img, const std::vector<bool> &det
             return;
         }
     }
-    if(contours.empty() )
-    {
-        m_StopDetected = false;
-		return;
-    }
-    cv::Mat img1 = img.clone();
+    cv::Mat helpImage = image.clone();
 	for(unsigned int i=0; i<contours.size(); ++i)
     {
         if(detetcion[i] )
 	    {
-            cv::rectangle(img, contours[i], color, -1);
+            cv::rectangle(image, contours[i], color, -1);
         }
     }
-	cv::addWeighted(img1, 0.8, img, 0.2, 0, img);
+	cv::addWeighted(helpImage, 0.8, image, 0.2, 0, image);
 	for(unsigned int i = 0 ; i <contours.size(); ++i) 
     {
         if(detetcion[i] )
         {
-            cv::rectangle(img, contours[i], color, 3);
-            cv::putText(img, text, cv::Point(contours[i].x+1, contours[i].y+8), cv::FONT_HERSHEY_DUPLEX, 0.3, color, 1);
+            cv::rectangle(image, contours[i], color, 3);
+            cv::putText(image, text, cv::Point(contours[i].x+1, contours[i].y+8), cv::FONT_HERSHEY_DUPLEX, 0.3, color, 1);
         }
     }
     m_StopDetected = true;
@@ -247,7 +247,7 @@ void StopSignProcessor::setFrame(sensor_msgs::Image &rawFrame)
     cv::Mat1b redHueImage;  //binary mask
     StopSignProcessor::redColorSegmentation(helpImage, redHueImage);  //set red hue binary mask
     auto contours = StopSignProcessor::getRedContours(redHueImage);
-    contours = StopSignProcessor::getStopSignContours(helpImage, contours);
+    contours = StopSignProcessor::getDetectedStopContours(helpImage, contours);
     auto images = StopSignProcessor::getTextImagesForOCR(numOfResizing, contours);
     auto detection = StopSignProcessor::getDetectionFromOCR(images);
     StopSignProcessor::drawLocations(m_Frame, detection, contours);
@@ -277,5 +277,5 @@ std::string StopSignProcessor::getResult(void) const
 
 std::string StopSignProcessor::getProcessorName(void) const
 {
-    return "Stop Sign";
+    return "Stop Sign Processor";
 }

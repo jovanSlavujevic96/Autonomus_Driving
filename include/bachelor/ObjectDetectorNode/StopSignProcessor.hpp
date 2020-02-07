@@ -19,10 +19,10 @@ private:
     void crop(cv::Mat &image);
     void redColorSegmentation(const cv::Mat &sample, cv::Mat &result);
     std::vector<cv::Rect> getRedContours(const cv::Mat1b &hueImage) const;
-    std::vector<cv::Rect> getStopSignContours(const cv::Mat &image, std::vector<cv::Rect> &contours);
+    std::vector<cv::Rect> getDetectedStopContours(const cv::Mat &image, std::vector<cv::Rect> &contours);
     std::vector<cv::Mat> getTextImagesForOCR(const int numOfResizing, std::vector<cv::Rect> &contours);
     std::vector<bool> getDetectionFromOCR(const std::vector<cv::Mat> &images);
-   	void drawLocations(cv::Mat &img, const std::vector<bool> &detetcion, const std::vector<cv::Rect> &contours,
+   	void drawLocations(cv::Mat &image, const std::vector<bool> &detetcion, const std::vector<cv::Rect> &contours,
         const cv::Scalar color, const std::string text);
 
 public:
