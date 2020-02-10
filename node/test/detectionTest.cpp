@@ -5,19 +5,19 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 
-#define play 30
+#define play 1
 #define pause 0
 
 int main(void)
 {
-    ///*
+    /*
     RoadLaneProcessor lane;
     //cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
     //*/
 
     ///*
     SpeedLimitProcessor speed;
-    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/OUTFILE-1.mp4");
+    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
     //*/
 
     /*
@@ -46,7 +46,7 @@ int main(void)
         img1 = speed.getProcessedFrame();
         //*/
 
-        ///*
+        /*
         lane.setFrame(img1);
         img1 = lane.getProcessedFrame();
         //*/
@@ -57,7 +57,10 @@ int main(void)
         //*/
 
         frame = cv_bridge::toCvCopy(img1, "bgr8")->image;
-		cv::imshow("video stream", frame );
+		cv::resize(frame, frame, cv::Size(std::round(frame.cols*0.6), std::round(frame.rows*0.6)));
+        cv::imshow("video stream", frame );
+        
+        //std::cout << speed.getResult() << std::endl;
 
         auto btn = cv::waitKey(state);
         if(btn == 27 || btn == 'q' || btn == 'Q') break;

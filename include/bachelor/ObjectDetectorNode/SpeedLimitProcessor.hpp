@@ -10,10 +10,13 @@ class SpeedLimitProcessor : public IImageProcessor
 {
 private:
     cv::CascadeClassifier m_SpeedClassifier;
-    cv::CascadeClassifier m_LimitRecognizeClassifier[1];
+    cv::CascadeClassifier m_LimitRecognizeClassifier[2];
     cv::Mat m_Frame, m_ImageMask;
     bool m_SpeedLimitDetected;
-    int m_SpeedValue;
+    int m_LimitValue;
+    std::map<int, cv::Scalar> m_ColorMap;
+    const int m_NumOfClassifiers;
+    const int m_PossibleLimitValues[5];
 
     void loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path);
     void resize(cv::Mat &image, const float resizeFactor);
@@ -21,11 +24,11 @@ private:
     cv::Mat makeROI(const cv::Mat &image) const;
     void redColorSegmentation(const cv::Mat &sample, cv::Mat1b &result);
     std::vector<cv::Rect> getRedContours(const cv::Mat1b &hueImage) const;
-    void eraseFromContour(std::vector<cv::Rect> &contours);
-    std::vector<cv::Rect> getDetectedSpeedLimitContours(const cv::Mat &image, std::vector<cv::Rect> &contours);
+    void preprocessContours(const cv::Mat &image, std::vector<cv::Rect> &contours);
+    std::vector<cv::Rect> getDetectedSpeedLimitContours(const cv::Mat &image, const std::vector<cv::Rect> &contours);
     std::vector<cv::Rect> getSpeedLimitValues(const cv::Mat &image, const std::vector<cv::Rect> &contours);
     void drawLocations(cv::Mat &image, std::vector<cv::Rect> &contours, const float resizeFactor, 
-        const cv::Scalar colorEdge, const cv::Scalar colorText, const std::string text);
+        const cv::Scalar colorText, const cv::Scalar colorEdge, const std::string text);
 
 public:
     SpeedLimitProcessor();

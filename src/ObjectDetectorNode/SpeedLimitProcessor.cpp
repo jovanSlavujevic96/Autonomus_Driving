@@ -1,9 +1,41 @@
 #include <bachelor/ObjectDetectorNode/SpeedLimitProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
-#define SpeedCascadesPath "/home/rtrk/myWS/src/bachelor/cascade/speed_limit/classifier/"
-#define SpeedLimitClassifier SpeedCascadesPath "cascade.xml"
-#define SpeedLimit80Classifier SpeedCascadesPath "cascade_80.xml"
+#define SpeedCascadesPath "/home/rtrk/myWS/src/bachelor/cascade/"
+#define SpeedLimitClassifier SpeedCascadesPath "speed_limit_signs/classifier/cascade2.xml"
+//#define SpeedLimit80Classifier SpeedCascadesPath "speed_limit_signs/classifier/cascade_80.xml"
+#define SpeedLimit80Classifier SpeedCascadesPath "speed_limit_80/classifier/cascade.xml"
+#define SpeedLimit40Classifier SpeedCascadesPath "speed_limit_40/classifier/cascade.xml"
+
+static cv::Scalar HSVtoRGB(int H, double S, double V) 
+{
+	double C = S * V;
+	double X = C * (1 - abs(fmod(H / 60.0, 2) - 1));
+	double m = V - C;
+	double Rs, Gs, Bs;
+
+	if(H >= 0 && H < 60) {
+		Rs = C;
+		Gs = X;
+		Bs = 0;	
+	}
+	else if(H >= 60 && H < 120) {	
+		Rs = X;
+		Gs = C;
+		Bs = 0;	
+	}
+	else if(H >= 120 && H < 180) {
+		Rs = 0;
+		Gs = C;
+		Bs = X;	
+	}
+	else if(H >= 180 && H < 240) {
+		Rs = 0;
+		Gs = X;
+		Bs = C;	
+	}
+	return cv::Scalar((Bs + m)*255, (Gs + m)*255, (Rs + m)*255);
+}
 
 void SpeedLimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path)
 {
@@ -46,8 +78,8 @@ void SpeedLimitProcessor::createMask(const cv::Mat &image)
     // Create a binary polygon mask
     cv::fillConvexPoly(mask1, pts, cv::Scalar(255, 0, 0) );
 
-    x[0] = std::round(image.cols*0.38), y[0] = 430;
-    x[1] = std::round(image.cols*0.57), y[1] = y[0];
+    x[0] = std::round(image.cols*0.44), y[0] = 430;
+    x[1] = std::round(image.cols*0.5), y[1] = y[0];
     x[2] = x[1], y[2] = 0;
     x[3] = x[0], y[3] = y[2];
   
@@ -120,23 +152,23 @@ std::vector<cv::Rect> SpeedLimitProcessor::getRedContours(const cv::Mat1b &hueIm
     return redRects; 
 }
 
-void SpeedLimitProcessor::eraseFromContour(std::vector<cv::Rect> &contours)
-{           
-    for(int j=0; j<contours.size(); ++j)
-    {
-        if( (contours[j].size().height < 30 || contours[j].size().height > 80) || (contours[j].size().width < 30 || contours[j].size().width > 80) )
-        {
-            contours.erase(contours.begin() + j); 
-        }
-    }
-}
-
-std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const cv::Mat &image, std::vector<cv::Rect> &contours)
+void SpeedLimitProcessor::preprocessContours(const cv::Mat &image, std::vector<cv::Rect> &contours)
 {
     for(int i=0; i<contours.size(); ++i)
     {
         auto *contour = &contours[i];
-        auto limit = std::round(contour->width/3);
+        float factor = 0.33f;
+        int dimension;
+        if(contour->width < contour->height)
+        {
+            dimension = contour->width;
+        }
+        else
+        {
+            dimension = contour->height;
+        }
+        int limit = std::round(dimension*factor);
+
         for(int incrVal = limit; incrVal >= 1; --incrVal)
         {
             if( (contour->x-incrVal)>=0 && (contour->y-incrVal)>=0 && 
@@ -150,17 +182,19 @@ std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const c
                 break;
             }
         }
-    }
+    }    
+}
+
+std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const cv::Mat &image, const std::vector<cv::Rect> &contours)
+{
     std::vector<cv::Rect> speedRects;
     for(int i=0; i<contours.size(); ++i)
 	{
 		std::vector<cv::Rect> speedLfound;
-        m_SpeedClassifier.detectMultiScale( image(contours[i]), speedLfound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
+        m_SpeedClassifier.detectMultiScale( image(contours[i]), speedLfound, 1.1f, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
 		if( !speedLfound.empty() )
 		{   
-            speedLfound[0].x +=  contours[i].x;
-            speedLfound[0].y +=  contours[i].y;
-            speedRects.push_back( speedLfound[0] );
+            speedRects.push_back(contours[i]);
         }
 	}
     return speedRects;
@@ -168,18 +202,17 @@ std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const c
 
 std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitValues(const cv::Mat &image, const std::vector<cv::Rect> &contours)
 {
-    const int possibleLimitVals[5] = {80,40,50,100,130};
     std::vector<cv::Rect> limits;
     bool assign = true;
     for(int i=0; i<contours.size(); ++i)
     {
         bool info;
         int whichCascade = 0;
-        for(int j=0; j<1; j++)
+        std::vector<cv::Rect> digitFound;
+        for(int j=0; j<m_NumOfClassifiers; j++)
         {	
-            whichCascade = j;
-            std::vector<cv::Rect> digitFound;	
-            m_LimitRecognizeClassifier[j].detectMultiScale( image(contours[i]), digitFound, 1.1, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
+            whichCascade = j;	
+            m_LimitRecognizeClassifier[j].detectMultiScale( image(contours[i]), digitFound, 1.1f, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
             if(! (info = digitFound.empty()) )
             {
                 break;
@@ -187,11 +220,13 @@ std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitValues(const cv::Mat &im
         }
 		if( !info )
 		{   
-            limits.push_back(contours[i]);
+            digitFound[0].x += contours[i].x;
+            digitFound[0].y += contours[i].y;
+            limits.push_back(digitFound[0]);
             if(assign)
             {
                 assign = false;
-                m_SpeedValue = possibleLimitVals[whichCascade];
+                m_LimitValue = m_PossibleLimitValues[whichCascade];
             }
         }
     }
@@ -199,7 +234,7 @@ std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitValues(const cv::Mat &im
 }
 
 void SpeedLimitProcessor::drawLocations(cv::Mat &image, std::vector<cv::Rect> &contours, const float resizeFactor,
-    const cv::Scalar colorEdge = cv::Scalar(255,0,0), const cv::Scalar colorText = cv::Scalar(255,255,0), const std::string text = "SPEED LIMIT ")
+    const cv::Scalar colorText = cv::Scalar(255,255,0), const cv::Scalar colorEdge = cv::Scalar(255,0,0), const std::string text = "SPEED LIMIT ")
 {
     if(contours.empty() )
     {
@@ -223,18 +258,27 @@ void SpeedLimitProcessor::drawLocations(cv::Mat &image, std::vector<cv::Rect> &c
 	for(unsigned int i = 0 ; i <contours.size(); ++i) 
     {
         cv::rectangle(image, contours[i], colorEdge, 3);
-        cv::putText(image, (text+std::to_string(m_SpeedValue) ), cv::Point(contours[i].x+1, (contours[i].y+contours[i].height+18)), 
+        cv::putText(image, (text+std::to_string(m_LimitValue) ), cv::Point(contours[i].x+1, (contours[i].y+contours[i].height+18)), 
             cv::FONT_HERSHEY_DUPLEX, 0.7f, colorText, 2);
     }
     m_SpeedLimitDetected = true;
 }
 
-SpeedLimitProcessor::SpeedLimitProcessor() : m_SpeedLimitDetected{false}
+SpeedLimitProcessor::SpeedLimitProcessor() : m_SpeedLimitDetected{false}, 
+    m_NumOfClassifiers{ sizeof(m_LimitRecognizeClassifier) / sizeof(*m_LimitRecognizeClassifier) },
+    m_PossibleLimitValues{40,80,50,100,130}
 {
     const std::string Path = SpeedLimitClassifier;
     SpeedLimitProcessor::loadCascade(&m_SpeedClassifier, 1, &Path);
-    const std::string Paths[1] = {SpeedLimit80Classifier};
-    SpeedLimitProcessor::loadCascade(m_LimitRecognizeClassifier, 1, Paths);
+    const std::string Paths[2] = {SpeedLimit40Classifier, SpeedLimit80Classifier};
+    SpeedLimitProcessor::loadCascade(m_LimitRecognizeClassifier, m_NumOfClassifiers, Paths);
+
+    int h=0;
+    for(int i=0; i<m_NumOfClassifiers; ++i)
+    {
+        m_ColorMap[m_PossibleLimitValues[i]] = HSVtoRGB(h, 1.0f, 1.0f);
+        h += 30;
+    }
 }
 
 void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
@@ -249,13 +293,14 @@ void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
     }
 
     auto imageROI = SpeedLimitProcessor::makeROI(helpImage);
+    cv::imshow("ROI", imageROI);
     cv::Mat1b redHueImage;  //binary mask
     SpeedLimitProcessor::redColorSegmentation(imageROI, redHueImage);
     auto contours =  SpeedLimitProcessor::getRedContours(redHueImage);
-    //SpeedLimitProcessor::eraseFromContour(contours);
+    SpeedLimitProcessor::preprocessContours(helpImage, contours);
     contours = SpeedLimitProcessor::getDetectedSpeedLimitContours(helpImage, contours);
     contours = SpeedLimitProcessor::getSpeedLimitValues(helpImage, contours);
-    SpeedLimitProcessor::drawLocations(m_Frame, contours, 0.6f);
+    SpeedLimitProcessor::drawLocations(m_Frame, contours, 0.6f, m_ColorMap[m_LimitValue]);
 }
 
 sensor_msgs::Image SpeedLimitProcessor::getProcessedFrame(void) const
@@ -276,7 +321,14 @@ bool SpeedLimitProcessor::getDetection(void) const
 
 std::string SpeedLimitProcessor::getResult(void) const
 {
-    return std::to_string(m_SpeedValue);
+    if(m_LimitValue)
+    {
+        return std::to_string(m_LimitValue);
+    }
+    else
+    {
+        return "NaN";
+    }
 }
 
 std::string SpeedLimitProcessor::getProcessorName(void) const
