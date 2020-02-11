@@ -57,7 +57,7 @@ int main(void)
         //*/
 
         frame = cv_bridge::toCvCopy(img1, "bgr8")->image;
-		cv::resize(frame, frame, cv::Size(std::round(frame.cols*0.6), std::round(frame.rows*0.6)));
+		//cv::resize(frame, frame, cv::Size(std::round(frame.cols*0.6), std::round(frame.rows*0.6)));
         cv::imshow("video stream", frame );
         
         //std::cout << speed.getResult() << std::endl;

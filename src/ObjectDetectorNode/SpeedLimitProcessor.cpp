@@ -185,9 +185,16 @@ void SpeedLimitProcessor::preprocessContours(const cv::Mat &image, std::vector<c
     }    
 }
 
+
+int incr=0;
+std::vector<bool> check = {true};
+int numOfDirectories=0;
+std::string tmpFolder;
+
 std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const cv::Mat &image, const std::vector<cv::Rect> &contours)
 {
     std::vector<cv::Rect> speedRects;
+    
     for(int i=0; i<contours.size(); ++i)
 	{
 		std::vector<cv::Rect> speedLfound;
@@ -195,6 +202,31 @@ std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const c
 		if( !speedLfound.empty() )
 		{   
             speedRects.push_back(contours[i]);
+        }
+        else
+        {
+            if(check[check.size()-1])
+            {
+                check.push_back(false);
+                std::stringstream ss;
+                ss << "mkdir ";
+                tmpFolder = std::string("/home/rtrk/Desktop/folder" + std::to_string(numOfDirectories) + '/');
+                ss << tmpFolder;
+                system(ss.str().c_str() );
+            }
+            if(!check[check.size()-1])
+            {
+                std::stringstream ss;
+                ss << tmpFolder << "crop_" << numOfDirectories << '_' << incr << ".jpg";
+                cv::imwrite(ss.str(), image(contours[i]));
+                incr++;
+                if(incr == 1001)
+                {
+                    check[check.size()-1] = true;
+                    incr = 0;
+                    ++numOfDirectories;
+                }
+            }            
         }
 	}
     return speedRects;
@@ -293,14 +325,16 @@ void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
     }
 
     auto imageROI = SpeedLimitProcessor::makeROI(helpImage);
-    cv::imshow("ROI", imageROI);
+    //cv::imshow("ROI", imageROI);
     cv::Mat1b redHueImage;  //binary mask
     SpeedLimitProcessor::redColorSegmentation(imageROI, redHueImage);
     auto contours =  SpeedLimitProcessor::getRedContours(redHueImage);
     SpeedLimitProcessor::preprocessContours(helpImage, contours);
     contours = SpeedLimitProcessor::getDetectedSpeedLimitContours(helpImage, contours);
-    contours = SpeedLimitProcessor::getSpeedLimitValues(helpImage, contours);
-    SpeedLimitProcessor::drawLocations(m_Frame, contours, 0.6f, m_ColorMap[m_LimitValue]);
+    m_Frame = helpImage.clone();//delete
+
+    //contours = SpeedLimitProcessor::getSpeedLimitValues(helpImage, contours);
+    //SpeedLimitProcessor::drawLocations(m_Frame, contours, 0.6f, m_ColorMap[m_LimitValue]);
 }
 
 sensor_msgs::Image SpeedLimitProcessor::getProcessedFrame(void) const
