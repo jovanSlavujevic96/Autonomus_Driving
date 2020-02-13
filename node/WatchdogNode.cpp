@@ -1,5 +1,5 @@
-#include <bachelor/WatchdogNode/Watchdog.hpp>
-#include <bachelor/DataProtocol/DataReceiver.hpp>
+#include <bachelor/Watchdog/Watchdog.hpp>
+#include <bachelor/DataReceiver/DataReceiver.hpp>
 
 #include <memory>
 #include <string>
@@ -11,16 +11,16 @@
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "WatchdogNode");
+    ros::init(argc, argv, "Watchdog_Node");
     
-    std::unique_ptr<IObserver<bool> > WatchdogObserver = std::make_unique<Watchdog>();
+    std::unique_ptr<IObserver<std_msgs::Bool>> WatchdogObserver = std::make_unique<Watchdog>();
     
-    std::unique_ptr<IDataReceiver<bool,std_msgs::Bool> > Subject[NumOfNodes];
-    const Topics topics[NumOfNodes] = {fromVIDEOPtoWDOG, fromOBJDETtoWDOG, fromTIMERtoWDOG, fromDISPtoWDOG};
+    std::unique_ptr<IDataReceiver<std_msgs::Bool>> Subject[NumOfNodes];
+    const Topics topics[NumOfNodes] = {fromCAMtoWDOG, fromOBJDETtoWDOG, fromDISPtoWDOG};
     for(int i=0; i<NumOfNodes; ++i)
     {
-        Subject[i] = std::make_unique<DataReceiver<bool,std_msgs::Bool> >(topics[i] );
-        Subject[i]->registerObserver(WatchdogObserver.get(), topics[i]);
+        Subject[i] = std::make_unique<DataReceiver<std_msgs::Bool> >(topics[i] );
+        Subject[i]->registerObserver(WatchdogObserver.get() );
     }
     
     ros::Rate loop_rate(loopRate);

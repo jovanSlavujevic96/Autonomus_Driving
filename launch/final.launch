@@ -1,6 +1,5 @@
 <launch>
-  <node pkg="bachelor" type="TimerNode" name="TimerNode" output="screen" launch-prefix="gnome-terminal --command"/>
-  <node pkg="bachelor" type="VideoPlayerNode" name="VideoPlayerNode" launch-prefix="gnome-terminal --command"/>
-  <node pkg="bachelor" type="ObjectDetectorNode" name="ObjectDetectorNode" launch-prefix="gnome-terminal --command"/>
-  <node pkg="bachelor" type="DisplayNode" name="DisplayNode" launch-prefix="gnome-terminal --command"/>
+  <node pkg="bachelor" type="CameraSimulator_Node" name="CameraSimulator_Node" launch-prefix="gnome-terminal --command"/>
+  <node pkg="bachelor" type="ObjectDetector_Node" name="ObjectDetector_Node" launch-prefix="gnome-terminal --command"/>
+  <node pkg="bachelor" type="Display_Node" name="Display_Node" launch-prefix="gnome-terminal --command"/>
 </launch>

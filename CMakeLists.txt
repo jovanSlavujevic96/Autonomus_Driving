@@ -25,11 +25,10 @@ find_package(OpenCV 3 REQUIRED )
 # find_package(Boost REQUIRED COMPONENTS system)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  Coordinates.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -48,7 +47,7 @@ find_package(OpenCV 3 REQUIRED )
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  sensor_msgs  std_msgs
+  std_msgs #sensros_msgs
 )
 
 ###################################
@@ -64,8 +63,8 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES bachelorProject 
-  CATKIN_DEPENDS cv_bridge image_transport roscpp rospy sensor_msgs std_msgs
-  DEPENDS system_lib
+  CATKIN_DEPENDS cv_bridge image_transport roscpp rospy sensor_msgs std_msgs message_runtime
+  DEPENDS #system_lib
 )
 
 
@@ -81,168 +80,116 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS} 
 )
 
-############################################## VideoPlayer_node
-add_library(_VideoPlayerLib
-  src/VideoPlayerNode/VideoPlayer.cpp
-  src/DataProtocol/DataSender.cpp
-  src/DataProtocol/DataReceiver.cpp
+####### Data Protocol Lib ########################
+
+add_library(_DataProtocolLib
+  src/DataSender/DataSender.cpp
+  src/DataReceiver/DataReceiver.cpp
 )
 
-add_executable(VideoPlayerNode node/VideoPlayerNode.cpp )
+####### Image Processor Lib ########################
 
-target_link_libraries(VideoPlayerNode 
-  _VideoPlayerLib 
+add_library(_ImageProcessorLib
+  src/ImageProcessor/StopProcessor.cpp  #Stop Sign detecting and drawing on frame
+  src/ImageProcessor/SpeedLimitProcessor.cpp  #Speed Limit Sign detecting and drawing on frame 	
+  src/ImageProcessor/RoadLaneProcessor.cpp  #Road Lane detecting and folowing the lanes
+)
+############################################## CameraSimulator_Node
+
+add_library(_CameraSimulatorLib
+  src/CameraSimulator/CameraSimulator.cpp
+)
+
+add_executable(CameraSimulator_Node node/CameraSimulatorNode.cpp )
+
+target_link_libraries(CameraSimulator_Node 
+  _CameraSimulatorLib
+  _DataProtocolLib 
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES} 
 )
-
-add_dependencies(VideoPlayerNode 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}
-)
-############################################## ObjectDetector_node
+############################################## ObjectDetector_Node
 
 add_library(_ObjectDetectorLib
-  src/ObjectDetectorNode/ObjectDetector.cpp  #main class (observer class)
-
-  src/DataProtocol/DataSender.cpp
-  src/DataProtocol/DataReceiver.cpp   #Observer Pattern (subject class)
-
-  src/ObjectDetectorNode/StopSignProcessor.cpp  #Stop Sign detecting and drawing on frame
-  src/ObjectDetectorNode/SpeedLimitProcessor.cpp  #Speed Limit Sign detecting and drawing on frame 	
-  src/ObjectDetectorNode/RoadLaneProcessor.cpp  #Road Lane detecting and folowing the lanes
+  src/Detector/Detector.cpp  #main class (observer class)
 )
 
-add_executable(ObjectDetectorNode node/ObjectDetectorNode.cpp ) 
+add_executable(ObjectDetector_Node node/ObjectDetectorNode.cpp ) 
 
-target_link_libraries(ObjectDetectorNode 
+target_link_libraries(ObjectDetector_Node 
   _ObjectDetectorLib
+  _DataProtocolLib
+  _ImageProcessorLib
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(ObjectDetectorNode 
+add_dependencies(ObjectDetector_Node 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}
 )
 
-############################################## Timer_node
-
-add_library(_TimerLib
-  src/TimerNode/Timer.cpp
-  src/DataProtocol/DataSender.cpp
-  src/DataProtocol/DataReceiver.cpp
-)
-
-add_executable(TimerNode node/TimerNode.cpp )
-
-target_link_libraries(TimerNode 
-  _TimerLib 
-  ${catkin_LIBRARIES} 
-)
-
-add_dependencies(TimerNode 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}
-)
-
-############################################## Watchdog node
+############################################## Watchdog_Node 
 
 add_library(_WatchdogLib
-  src/WatchdogNode/Watchdog.cpp
-  src/DataProtocol/DataReceiver.cpp
+  src/Watchdog/Watchdog.cpp
 )
 
-add_executable(WatchdogNode node/WatchdogNode.cpp )
+add_executable(Watchdog_Node node/WatchdogNode.cpp )
 
-target_link_libraries(WatchdogNode 
-  _WatchdogLib 
+target_link_libraries(Watchdog_Node 
+  _WatchdogLib
+  _DataProtocolLib 
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(WatchdogNode 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}
-)
-
-############################################## Display node
+############################################## Display_Node
 
 add_library(_DisplayLib
-  src/DisplayNode/Display.cpp
-  src/DataProtocol/DataSender.cpp
-  src/DataProtocol/DataReceiver.cpp
+  src/Display/Display.cpp
 )
 
-add_executable(DisplayNode node/DisplayNode.cpp )
+add_executable(Display_Node node/DisplayNode.cpp )
 
-target_link_libraries(DisplayNode 
+target_link_libraries(Display_Node 
   _DisplayLib
+  _DataProtocolLib
   ${OpenCV_LIBS}
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(DisplayNode 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}
+############################################## DrawAndDisplay_Node
+
+add_library(_DrawAndDisplayLib
+  src/DrawAndDisplay/DrawAndDisplay.cpp
 )
 
-##############################################
+add_executable(DrawAndDisplay_Node node/DrawAndDisplayNode.cpp ) 
 
-add_executable(SpeedLimit node/test/SpeedOCR.cpp ) 
-
-target_link_libraries(SpeedLimit 
-  ${OpenCV_LIBS} 
+target_link_libraries(DrawAndDisplay_Node 
+  _DrawAndDisplayLib
+  _DataProtocolLib
+  ${OpenCV_LIBS}
   ${catkin_LIBRARIES}
-  tesseract
-  lept
 )
 
-add_dependencies(SpeedLimit 
+add_dependencies(DrawAndDisplay_Node 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}
 )
-##############################################
+
+#################################################
 
 add_executable(detTest node/test/detectionTest.cpp ) 
 
 target_link_libraries(detTest 
   _ObjectDetectorLib
+  _ImageProcessorLib
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES}
-)
-
-add_dependencies(detTest 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}
 )
 
 ##############################################
-
-add_executable(saveFrames node/test/saveFrames.cpp ) 
-
-target_link_libraries(saveFrames 
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES}
-)
-
-add_dependencies(saveFrames 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}
-)
-
-##############################################
-
-add_executable(colorSegmentation node/test/colorSegmentation.cpp ) 
-
-target_link_libraries(colorSegmentation 
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES}
-)
-
-add_dependencies(colorSegmentation 
-  ${${PROJECT_NAME}_gencpp} 
-  ${catkin_EXPORTED_TARGETS}
-)
 
 #############
 ## Install ##
