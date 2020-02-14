@@ -23,11 +23,11 @@ private:
 	void checkMsgs(void);
 public:
 	CameraSimulator();
-	virtual ~CameraSimulator();
+	virtual ~CameraSimulator() = default;
 
 	void setVideo(cv::VideoCapture &_video);
 
-	void update(std_msgs::Bool &_data, Topics _subjTopic) override;
+	void update(const std_msgs::Bool &_msg, Topics _subjTopic) override;
 	bool doStuff(void) override;
 };
 

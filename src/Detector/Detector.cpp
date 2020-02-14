@@ -3,29 +3,28 @@
 
 #include <iostream>
 
-Detector::Detector(std::unique_ptr<IImageProcessor>_processor) :	
-	m_DataEmiterWatchdog{std::make_unique<DataSender<std_msgs::Bool>>(fromOBJDETtoWDOG) },
-	m_CoordSender{std::make_unique<DataSender<bachelor::Coordinates>>(fromOBJDETtoDRAW) },
-	//m_FrameEmiterDisplay{std::make_unique<DataSender<sensor_msgs::Image>>(fromOBJDETtoDISP) },
+Detector::Detector(std::unique_ptr<IImageProcessor>_processor, Topics _ImHereTopic, Topics _CoordTopic) :	
+	m_DataEmiterWatchdog{std::make_unique<DataSender<std_msgs::Bool>>(_ImHereTopic) },
+	m_CoordSender{std::make_unique<DataSender<bachelor::Coordinates>>(_CoordTopic) },
 	m_ImgProcDI{std::move(_processor) }
 {
 
 }
 
-void Detector::update(sensor_msgs::Image &_frame, Topics _subjTopic)
+void Detector::update(const sensor_msgs::Image &_msg, Topics _subjTopic)
 {
-	if(_subjTopic == fromCAMtoOBJDET)
+	if(_subjTopic == RawFrame)
 	{
-		m_ImgProcDI->setFrame(_frame);
-		auto tmpVec = m_ImgProcDI->getCoordinates();
-
+		m_ImgProcDI->setFrame(_msg);
+		auto Vecs = m_ImgProcDI->getCoordinates();
 		bachelor::Coordinates msg;
-		for(int i=0; i<tmpVec.size(); i+=4)
+		for(int i=0; i<4; i++)
 		{
-			msg.X1[i/4] = tmpVec[i];
-			msg.Y1[i/4] = tmpVec[i+1];
-			msg.X2_Width[i/4] = tmpVec[i+2];
-			msg.Y2_Height[i/4] = tmpVec[i+3];
+			auto tmpVec = Vecs[i];
+			msg.X1[i] = tmpVec[0];
+			msg.Y1[i] = tmpVec[1];
+			msg.X2_Width[i] = tmpVec[2];
+			msg.Y2_Height[i] = tmpVec[3];
 		}
 		m_CoordSender->Publish(msg);
 	}

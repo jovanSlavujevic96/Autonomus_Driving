@@ -1,19 +1,19 @@
-#include <bachelor/ImageProcessor/RoadLaneProcessor.hpp>
+#include <bachelor/ImageProcessor/LaneProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
-void RoadLaneProcessor::resize(cv::Mat &image, const float resizeFactor)
+void LaneProcessor::resize(cv::Mat &image, const float resizeFactor)
 {
     cv::resize(image, image, cv::Size( std::round(image.size().width*resizeFactor), std::round(image.size().height*resizeFactor) ) ); 
 }
 
-cv::Mat RoadLaneProcessor::deNoise(const cv::Mat &image) const
+cv::Mat LaneProcessor::deNoise(const cv::Mat &image) const
 {
     cv::Mat deNoised;
     cv::GaussianBlur(image, deNoised, cv::Size(3, 3), 0, 0);
     return deNoised;    
 }
 
-cv::Mat RoadLaneProcessor::edges(const cv::Mat &image) const
+cv::Mat LaneProcessor::edges(const cv::Mat &image) const
 {
     cv::Mat gray, blur, canny;
     cv::cvtColor(image, gray, CV_RGB2GRAY);
@@ -22,7 +22,7 @@ cv::Mat RoadLaneProcessor::edges(const cv::Mat &image) const
     return canny;
 }
 
-void RoadLaneProcessor::createMask(const cv::Mat &image)
+void LaneProcessor::createMask(const cv::Mat &image)
 {
     cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
 
@@ -45,7 +45,7 @@ void RoadLaneProcessor::createMask(const cv::Mat &image)
     m_FrameMask = mask.clone(); //return
 }
 
-cv::Mat RoadLaneProcessor::getROI(const cv::Mat &image) const
+cv::Mat LaneProcessor::getROI(const cv::Mat &image) const
 {
     cv::Mat output;
     // Multiply the edges image and the mask to get the output
@@ -53,7 +53,7 @@ cv::Mat RoadLaneProcessor::getROI(const cv::Mat &image) const
     return output;
 }
 
-std::vector<cv::Vec4i> RoadLaneProcessor::houghLines(const cv::Mat &image) const
+std::vector<cv::Vec4i> LaneProcessor::houghLines(const cv::Mat &image) const
 {
     std::vector<cv::Vec4i> lines;
     // rho and theta are selected by trial and error
@@ -61,7 +61,7 @@ std::vector<cv::Vec4i> RoadLaneProcessor::houghLines(const cv::Mat &image) const
     return lines;
 }
 
-std::vector<std::vector<cv::Vec4i>> RoadLaneProcessor::lineSeparation(const cv::Mat &image, const std::vector<cv::Vec4i> &lines)
+std::vector<std::vector<cv::Vec4i>> LaneProcessor::lineSeparation(const cv::Mat &image, const std::vector<cv::Vec4i> &lines)
 {
     std::vector<std::vector<cv::Vec4i> > output(2);
     
@@ -118,7 +118,7 @@ std::vector<std::vector<cv::Vec4i>> RoadLaneProcessor::lineSeparation(const cv::
     return output;
 }
 
-std::vector<cv::Point> RoadLaneProcessor::regression(const cv::Mat &image, const std::vector<std::vector<cv::Vec4i>> &lines)
+std::vector<cv::Point> LaneProcessor::regression(const cv::Mat &image, const std::vector<std::vector<cv::Vec4i>> &lines)
 {
     std::vector<cv::Point> output(4);
     cv::Point ini, fini, ini2, fini2;
@@ -193,7 +193,7 @@ std::vector<cv::Point> RoadLaneProcessor::regression(const cv::Mat &image, const
     return output;
 }
 
-void RoadLaneProcessor::CalculateCoordinates(std::vector<cv::Point> &lanePts, const float resizeFactor)
+void LaneProcessor::CalculateCoordinates(std::vector<cv::Point> &lanePts, const float resizeFactor)
 {
     //resize lines
     for(int i=0; i<lanePts.size(); ++i)
@@ -201,41 +201,45 @@ void RoadLaneProcessor::CalculateCoordinates(std::vector<cv::Point> &lanePts, co
         lanePts[i].x = std::round(lanePts[i].x/resizeFactor);
         lanePts[i].y = std::round(lanePts[i].y/resizeFactor);
     }
-
     //first push right line
+    std::vector<int> coordinateSet;
     if(m_RightFlag) 
     {
         int rightLine[4] = { lanePts[0].x, lanePts[0].y, lanePts[1].x, lanePts[1].y };
         for(int i=0; i<4; ++i)
         {
-            m_Coordinates.push_back(rightLine[i]);
+            coordinateSet.push_back(rightLine[i]);
         }
+        m_Coordinates.push_back(coordinateSet);
     }
     else
     {
         for(int i=0; i<4; ++i)
         {
-            m_Coordinates.push_back(0);
+            coordinateSet.push_back(0);
         }
+        m_Coordinates.push_back(coordinateSet);
     }
-
+    coordinateSet.clear();
     //second push left line
     if(m_LeftFlag)  
     {
         int leftLine[4] = {lanePts[2].x, lanePts[2].y, lanePts[3].x, lanePts[3].y};
         for(int i=0; i<4; ++i)
         {
-            m_Coordinates.push_back(leftLine[i]);
+            coordinateSet.push_back(leftLine[i]);
         }
+        m_Coordinates.push_back(coordinateSet);
     }
     else
     {
         for(int i=0; i<4; ++i)
         {
-            m_Coordinates.push_back(0);
+            coordinateSet.push_back(0);
         }
+        m_Coordinates.push_back(coordinateSet);
     }
-
+    coordinateSet.clear();
     //then push measured and ref dot like lines
     if(m_LeftFlag && m_RightFlag) 
     {
@@ -244,25 +248,32 @@ void RoadLaneProcessor::CalculateCoordinates(std::vector<cv::Point> &lanePts, co
             (int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y-30)/resizeFactor)};
         for(int i=0; i<4; ++i)
         { 
-            m_Coordinates.push_back(measuredDot_Line[i]);
+            coordinateSet.push_back(measuredDot_Line[i]);
         }
+        m_Coordinates.push_back(coordinateSet);
+        coordinateSet.clear();
         int refDot_line[4] = {(int)std::round(m_RefDot.x/resizeFactor), (int)std::round((m_RefDot.y+15)/resizeFactor), 
             (int)std::round(m_RefDot.x/resizeFactor), (int)std::round((m_RefDot.y-15)/resizeFactor) };
-            for(int i=0; i<4; ++i)
+        for(int i=0; i<4; ++i)
         { 
-            m_Coordinates.push_back(refDot_line[i]);
+            coordinateSet.push_back(refDot_line[i]);
         }
+        m_Coordinates.push_back(coordinateSet);
     }
     else
     {
-        for(int i=0; i<8; i++)
+        for(int i=0; i<4; ++i)
         {
-            m_Coordinates.push_back(0);
+            coordinateSet.push_back(0);
         }
+        m_Coordinates.push_back(coordinateSet);
+        m_Coordinates.push_back(coordinateSet);
     }
+    
+
 }
 
-void RoadLaneProcessor::plotLane(cv::Mat &image, const std::vector<cv::Point> &lanePts, const float resizeFactor)
+void LaneProcessor::plotLane(cv::Mat &image, const std::vector<cv::Point> &lanePts, const float resizeFactor)
 {
     if(m_RightFlag)
     {
@@ -289,42 +300,42 @@ void RoadLaneProcessor::plotLane(cv::Mat &image, const std::vector<cv::Point> &l
         cv::addWeighted(tmp, 0.3f, image, 1.0f - 0.3f, 0, image);
     }
 
-    cv::putText(image, RoadLaneProcessor::getResult(), cv::Point(50, 90), 
+    cv::putText(image, LaneProcessor::getResult(), cv::Point(50, 90), 
         cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);  //print advised direction of driving 
 }
 
-RoadLaneProcessor::RoadLaneProcessor() : m_LeftFlag{false}, m_RightFlag{false}
+LaneProcessor::LaneProcessor() : m_LeftFlag{false}, m_RightFlag{false}
 {   
     //for specific  video
-    m_RefDot = cv::Point(542, 445); 
+    m_RefDot = cv::Point(539, 445); 
 }
 
-void RoadLaneProcessor::setFrame(sensor_msgs::Image &rawFrame)
+void LaneProcessor::setFrame(const sensor_msgs::Image &Frame)
 {
     m_RightFlag = false;
     m_LeftFlag = false;
     m_MeasuredDot = cv::Point(); //reset all important variables
     m_Coordinates.clear();
     
-    m_Frame = cv_bridge::toCvCopy(rawFrame, "bgr8")->image.clone();
+    m_Frame = cv_bridge::toCvCopy(Frame, "bgr8")->image.clone();
     auto helpImage = m_Frame.clone();
     const float percentage = 0.6f;
-    RoadLaneProcessor::resize(helpImage, percentage);
-    cv::Mat forProcess = RoadLaneProcessor::deNoise(helpImage);
-    forProcess = RoadLaneProcessor::edges(forProcess);
+    LaneProcessor::resize(helpImage, percentage);
+    cv::Mat forProcess = LaneProcessor::deNoise(helpImage);
+    forProcess = LaneProcessor::edges(forProcess);
     if(m_FrameMask.empty() )
     {
-        RoadLaneProcessor::createMask(forProcess);
+        LaneProcessor::createMask(forProcess);
     }
-    forProcess = RoadLaneProcessor::getROI(forProcess);
-    auto lines = RoadLaneProcessor::houghLines(forProcess);
-    auto separatedLines = RoadLaneProcessor::lineSeparation(helpImage, lines);
-    auto regression = RoadLaneProcessor::regression(helpImage, separatedLines);
-    RoadLaneProcessor::CalculateCoordinates(regression, percentage);
-    RoadLaneProcessor::plotLane(m_Frame, regression, percentage);
+    forProcess = LaneProcessor::getROI(forProcess);
+    auto lines = LaneProcessor::houghLines(forProcess);
+    auto separatedLines = LaneProcessor::lineSeparation(helpImage, lines);
+    auto regression = LaneProcessor::regression(helpImage, separatedLines);
+    LaneProcessor::CalculateCoordinates(regression, percentage);
+    LaneProcessor::plotLane(m_Frame, regression, percentage);
 }
 
-sensor_msgs::Image RoadLaneProcessor::getProcessedFrame(void) const
+sensor_msgs::Image LaneProcessor::getProcessedFrame(void) const
 {
     cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
     cv_ptr->encoding = "bgr8";
@@ -336,7 +347,7 @@ sensor_msgs::Image RoadLaneProcessor::getProcessedFrame(void) const
     return img1;
 }
 
-bool RoadLaneProcessor::getDetection(void) const
+bool LaneProcessor::getDetection(void) const
 {
     if(m_RightFlag || m_LeftFlag)
     {
@@ -348,7 +359,7 @@ bool RoadLaneProcessor::getDetection(void) const
     }
 }
 
-std::string RoadLaneProcessor::getResult(void) const    
+std::string LaneProcessor::getResult(void) const    
 {
     const int threshold = 10;
     if( m_RefDot.x - m_MeasuredDot.x >= threshold )    //its going right
@@ -365,7 +376,7 @@ std::string RoadLaneProcessor::getResult(void) const
     }
 }
 
-std::vector<int> RoadLaneProcessor::getCoordinates(void) const
+std::vector<std::vector<int>> LaneProcessor::getCoordinates(void) const
 {
     return m_Coordinates;
 }

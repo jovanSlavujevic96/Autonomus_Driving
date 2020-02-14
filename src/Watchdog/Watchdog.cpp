@@ -12,12 +12,12 @@ static bool key = false;
 
 void Watchdog::initMaps(void)
 {
-    const Topics topics[NumOfNodes] = {fromCAMtoWDOG, fromOBJDETtoWDOG, fromDISPtoWDOG };
+    const Topics topics[NumOfNodes] = {ImHere_CamSim, ImHere_Visual, ImHere_LaneDet };
     for(int i=0; i<NumOfNodes; ++i)
     {
         m_TopicMap[topics[i]] = i;
     }
-    const std::string nodes[NumOfNodes] = {"CamSimulator_Node", "ObjectDetector_Node", "Display_Node"};
+    const std::string nodes[NumOfNodes] = {"CameraSimulator_Node", "Visualizer_Node", "LanDetector_Node"};
     for(int i=0; i<NumOfNodes; ++i)
     {
         m_NodeMap[&m_NodeMSG[i]] = nodes[i];
@@ -82,19 +82,11 @@ void Watchdog::resetNodes(void)
 Watchdog::Watchdog() : m_NodeMSG{false}
 {
     Watchdog::initMaps();    
-    system("clear");
-    std::cout << "\n\tWatchdog initialized\n\n";
 }
 
-Watchdog::~Watchdog()
+void Watchdog::update(const std_msgs::Bool &_msg, Topics _subjTopic)
 {
-    system("clear");
-}
-
-void Watchdog::update(std_msgs::Bool &_data, Topics _subjTopic)
-{
-    std::cout << "received msg" << std::endl;
-    m_NodeMSG[m_TopicMap[_subjTopic]] = _data.data;
+    m_NodeMSG[m_TopicMap[_subjTopic]] = _msg.data;
 }
 
 bool Watchdog::doStuff(void)

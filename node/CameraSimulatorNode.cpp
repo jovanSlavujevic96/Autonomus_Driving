@@ -1,13 +1,7 @@
 #include <bachelor/CameraSimulator/CameraSimulator.hpp>
 #include <bachelor/DataReceiver/DataReceiver.hpp>
 
-#include <iostream>
-#include <sstream>
-
 #include <ros/ros.h>
-
-#include <std_msgs/Bool.h>
-#include <image_transport/image_transport.h>
 
 #define videoLib "/home/rtrk/Videos/testVideos/"
 
@@ -27,24 +21,24 @@ int main(int argc, char **argv)
 		fps = std::stoi(argv[2]);
 	}
 
-	const std::string NodeName = "CameraSimulator_Node";
+	const std::string nodeName = "CameraSimulator_Node";
 	cv::VideoCapture videoCap(videoName);
 	if(!videoCap.isOpened() )
 	{
 		std::cout << "There's no video such as this one:" << std::endl << videoName << std::endl;
-		std::cout << "Exit node: " << NodeName << std::endl;
+		std::cout << "Exit " << nodeName << std::endl;
 		return -1;
 	}
-	ros::init(argc, argv, NodeName);
+	ros::init(argc, argv, nodeName);
 
 	std::unique_ptr<CameraSimulator> PlayerObserver = std::make_unique<CameraSimulator>();
 	PlayerObserver->setVideo(videoCap);
 
 	std::unique_ptr<IDataReceiver<std_msgs::Bool> > DataSubject;
-	DataSubject = std::make_unique<DataReceiver<std_msgs::Bool> >(fromDISPtoCAM);
+	DataSubject = std::make_unique<DataReceiver<std_msgs::Bool>>(PauseOrPlay);
 	DataSubject->registerObserver(PlayerObserver.get());
 
-	std::cout << std::endl << "\tSending raw video frames." << std::endl << std::endl; 
+	std::cout << nodeName << " successfully initialized." << std::endl; 
 
 	while(ros::ok() )
 	{

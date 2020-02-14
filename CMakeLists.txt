@@ -86,14 +86,6 @@ add_library(_DataProtocolLib
   src/DataSender/DataSender.cpp
   src/DataReceiver/DataReceiver.cpp
 )
-
-####### Image Processor Lib ########################
-
-add_library(_ImageProcessorLib
-  src/ImageProcessor/StopProcessor.cpp  #Stop Sign detecting and drawing on frame
-  src/ImageProcessor/SpeedLimitProcessor.cpp  #Speed Limit Sign detecting and drawing on frame 	
-  src/ImageProcessor/RoadLaneProcessor.cpp  #Road Lane detecting and folowing the lanes
-)
 ############################################## CameraSimulator_Node
 
 add_library(_CameraSimulatorLib
@@ -108,23 +100,45 @@ target_link_libraries(CameraSimulator_Node
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES} 
 )
-############################################## ObjectDetector_Node
+############################################## Cluster of Detector Nodes
 
-add_library(_ObjectDetectorLib
+add_library(_DetectorLib
   src/Detector/Detector.cpp  #main class (observer class)
 )
+####### Image Processor Lib #######
 
-add_executable(ObjectDetector_Node node/ObjectDetectorNode.cpp ) 
+add_library(_ImageProcessorLib
+  src/ImageProcessor/StopProcessor.cpp  
+  src/ImageProcessor/LimitProcessor.cpp  
+  src/ImageProcessor/LaneProcessor.cpp  
+)
+######################## LaneDetector_Node
+add_executable(LaneDetector_Node node/detector_cluster/LaneDetectorNode.cpp ) 
 
-target_link_libraries(ObjectDetector_Node 
-  _ObjectDetectorLib
-  _DataProtocolLib
+target_link_libraries(LaneDetector_Node 
   _ImageProcessorLib
+  _DetectorLib
+  _DataProtocolLib
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES} 
 )
 
-add_dependencies(ObjectDetector_Node 
+add_dependencies(LaneDetector_Node 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}
+)
+######################## StopDetector_Node
+add_executable(StopDetector_Node node/detector_cluster/StopDetectorNode.cpp ) 
+
+target_link_libraries(StopDetector_Node 
+  _ImageProcessorLib
+  _DetectorLib
+  _DataProtocolLib
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(StopDetector_Node 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}
 )
@@ -143,47 +157,32 @@ target_link_libraries(Watchdog_Node
   ${catkin_LIBRARIES} 
 )
 
-############################################## Display_Node
+############################################## Visualizer_Node
 
-add_library(_DisplayLib
-  src/Display/Display.cpp
+add_library(_VisualizerLib
+  src/Visualizer/Visualizer.cpp
 )
 
-add_executable(Display_Node node/DisplayNode.cpp )
+add_executable(Visualizer_Node node/VisualizerNode.cpp ) 
 
-target_link_libraries(Display_Node 
-  _DisplayLib
-  _DataProtocolLib
-  ${OpenCV_LIBS}
-  ${catkin_LIBRARIES} 
-)
-
-############################################## DrawAndDisplay_Node
-
-add_library(_DrawAndDisplayLib
-  src/DrawAndDisplay/DrawAndDisplay.cpp
-)
-
-add_executable(DrawAndDisplay_Node node/DrawAndDisplayNode.cpp ) 
-
-target_link_libraries(DrawAndDisplay_Node 
-  _DrawAndDisplayLib
+target_link_libraries(Visualizer_Node 
+  _VisualizerLib
   _DataProtocolLib
   ${OpenCV_LIBS}
   ${catkin_LIBRARIES}
 )
 
-add_dependencies(DrawAndDisplay_Node 
+add_dependencies(Visualizer_Node 
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}
 )
 
 #################################################
 
-add_executable(detTest node/test/detectionTest.cpp ) 
+add_executable(detTest test_node/detectionTest.cpp ) 
 
 target_link_libraries(detTest 
-  _ObjectDetectorLib
+  _DetectorLib
   _ImageProcessorLib
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES}

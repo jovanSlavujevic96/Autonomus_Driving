@@ -1,6 +1,6 @@
-#include <bachelor/ImageProcessor/RoadLaneProcessor.hpp>
+#include <bachelor/ImageProcessor/LaneProcessor.hpp>
 #include <bachelor/ImageProcessor/StopProcessor.hpp>
-#include <bachelor/ImageProcessor/SpeedLimitProcessor.hpp>
+#include <bachelor/ImageProcessor/LimitProcessor.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 
@@ -9,14 +9,14 @@
 
 int main(void)
 {
-    ///*
-    RoadLaneProcessor lane;
+    /*
+    LaneProcessor lane;
     cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
     //*/
 
-    /*
-    SpeedLimitProcessor speed;
-    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
+    ///*
+    LimitProcessor speed;
+    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest3.mp4");
     //*/
 
     /*
@@ -25,9 +25,8 @@ int main(void)
     //*/
 
     if(!cap.isOpened() ) 
-    {
         return -1;
-    }
+    
     int state = play;
     cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
     sensor_msgs::Image img1;
@@ -42,11 +41,11 @@ int main(void)
 		cv_ptr->toImageMsg(img1);
 
         ///*
-        //speed.setFrame(img1);
-        //img1 = speed.getProcessedFrame();
+        speed.setFrame(img1);
+        img1 = speed.getProcessedFrame();
         //*/
 
-        ///*
+        /*
         lane.setFrame(img1);
         img1 = lane.getProcessedFrame();
         //*/

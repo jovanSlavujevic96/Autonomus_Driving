@@ -10,23 +10,26 @@
 #define loopRate 10
 
 int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "Watchdog_Node");
+{   
+    const std::string nodeName = "Watchdog_Node";
+    ros::init(argc, argv, nodeName); 
     
-    std::unique_ptr<IObserver<std_msgs::Bool>> WatchdogObserver = std::make_unique<Watchdog>();
+    std::unique_ptr<IObserver<std_msgs::Bool>> wdog = std::make_unique<Watchdog>();
     
-    std::unique_ptr<IDataReceiver<std_msgs::Bool>> Subject[NumOfNodes];
-    const Topics topics[NumOfNodes] = {fromCAMtoWDOG, fromOBJDETtoWDOG, fromDISPtoWDOG};
+    std::unique_ptr<IDataReceiver<std_msgs::Bool>> msgRcv[NumOfNodes];
+    const Topics topics[NumOfNodes] = {ImHere_CamSim, ImHere_Visual, ImHere_LaneDet};
     for(int i=0; i<NumOfNodes; ++i)
     {
-        Subject[i] = std::make_unique<DataReceiver<std_msgs::Bool> >(topics[i] );
-        Subject[i]->registerObserver(WatchdogObserver.get() );
+        msgRcv[i] = std::make_unique<DataReceiver<std_msgs::Bool> >(topics[i] );
+        msgRcv[i]->registerObserver(wdog.get() );
     }
     
+    std::cout << nodeName << " successfully initialized." << std::endl; 
+
     ros::Rate loop_rate(loopRate);
     while(ros::ok() )
     {
-        WatchdogObserver->doStuff();
+        wdog->doStuff();
         ros::spinOnce();
         loop_rate.sleep();
     }

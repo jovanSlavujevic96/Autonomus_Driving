@@ -26,9 +26,9 @@ private:
 
 public:
     Watchdog();
-    virtual ~Watchdog();
+    virtual ~Watchdog() = default;
 
-    void update(std_msgs::Bool &_data, Topics _subjTopic) override;
+    void update(const std_msgs::Bool &_msg, Topics _subjTopic) override;
     bool doStuff(void) override;
 };
 

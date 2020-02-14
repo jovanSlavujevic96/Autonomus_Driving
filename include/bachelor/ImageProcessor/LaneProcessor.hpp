@@ -1,17 +1,17 @@
-#ifndef BACHELOR_IMAGEPROCESSOR_ROADLANEPROCESSOR_HPP
-#define BACHELOR_IMAGEPROCESSOR_ROADLANEPROCESSOR_HPP
+#ifndef BACHELOR_IMAGEPROCESSOR_LANEPROCESSOR_HPP
+#define BACHELOR_IMAGEPROCESSOR_LANEPROCESSOR_HPP
 
 #include "IImageProcessor.hpp"
 
 #include <opencv2/opencv.hpp>
 
-class RoadLaneProcessor : public IImageProcessor
+class LaneProcessor : public IImageProcessor
 {
 private:
     cv::Mat m_Frame, m_FrameMask;
     bool m_LeftFlag, m_RightFlag;
     cv::Point m_RefDot, m_MeasuredDot;
-    std::vector<int> m_Coordinates;
+    std::vector<std::vector<int>> m_Coordinates;
 
     void resize(cv::Mat &image, const float resizeFactor);
     cv::Mat deNoise(const cv::Mat &image) const;
@@ -25,14 +25,14 @@ private:
     void plotLane(cv::Mat &image, const std::vector<cv::Point> &lanePts, const float resizeFactor);
 
 public:
-    RoadLaneProcessor();
-    virtual ~RoadLaneProcessor() = default;
+    LaneProcessor();
+    virtual ~LaneProcessor() = default;
 
-    void setFrame(sensor_msgs::Image &rawFrame) override;
+    void setFrame(const sensor_msgs::Image &Frame) override;
     sensor_msgs::Image getProcessedFrame(void) const override;
     bool getDetection(void) const override;
     std::string getResult(void) const override;
-    std::vector<int> getCoordinates(void) const override;
+    std::vector<std::vector<int>> getCoordinates(void) const override;
 };
 
 #endif //BACHELOR_IMAGEPROCESSOR_ROADLANEPROCESSOR_HPP

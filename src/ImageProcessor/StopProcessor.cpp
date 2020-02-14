@@ -118,10 +118,10 @@ std::vector<cv::Rect> StopProcessor::getDetectedStopContours(const cv::Mat &imag
 
 std::vector<cv::Mat> StopProcessor::getTextImagesForOCR(const int numOfResizing, std::vector<cv::Rect> &contours)
 {   
-    std::vector<cv::Mat> tmpVec;
+    std::vector<cv::Mat> images;
     cv::Mat tmpFrame = m_Frame.clone();
     StopProcessor::redColorSegmentation(tmpFrame, tmpFrame);
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1.5, 1));
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1.5f, 1));
     for(int i=0; i<contours.size(); ++i)
     {
         for(int j=0; j<numOfResizing; ++j)
@@ -136,12 +136,12 @@ std::vector<cv::Mat> StopProcessor::getTextImagesForOCR(const int numOfResizing,
         cv::floodFill(tmpCrop, cv::Point(0,0), cv::Scalar(255));
         cv::erode(tmpCrop, tmpCrop, element);
         
-        tmpVec.push_back(tmpCrop);
+        images.push_back(tmpCrop);
     }
-    return tmpVec;
+    return images;
 }
 
-std::vector<bool> StopProcessor::getDetectionFromOCR(const std::vector<cv::Mat> &images)
+std::vector<bool> StopProcessor::getDetectionPerRectFromOCR(const std::vector<cv::Mat> &images)
 {
     std::vector<bool> detection;
     for(auto image : images)
@@ -190,30 +190,61 @@ std::vector<bool> StopProcessor::getDetectionFromOCR(const std::vector<cv::Mat> 
     return detection;
 }
 
-void StopProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detetcion, const std::vector<cv::Rect> &contours,
-    const cv::Scalar colorEdge = cv::Scalar(0, 0, 255), const cv::Scalar colorText = cv::Scalar(255, 0, 255), const std::string text = "STOP")
+void StopProcessor::setDetection(const std::vector<bool> &detection, const std::vector<cv::Rect> &contours)
 {
     if(contours.empty() )
     {
         m_StopDetected = false;
 		return;
     }
-    for(int i=0; i<detetcion.size(); ++i)
+    for(int i=0; i<detection.size(); ++i)
     {
-        if(detetcion[i])
+        if(detection[i])
         {
             break;
         }
-        if(i == (detetcion.size()-1) && !detetcion[i] )
+        else if(i == (detection.size()-1) && !detection[i] )
         {
             m_StopDetected = false;
             return;
         }
     }
+    m_StopDetected = true;
+}
+
+void StopProcessor::setCoordinates(const std::vector<bool> &detection, const std::vector<cv::Rect> &contours)
+{
+    std::vector<int> coordinateSet;
+    for(int i=0; i<contours.size(); ++i)
+    {
+        if(detection[i])
+        {
+            coordinateSet.push_back(contours[i].x);
+            coordinateSet.push_back(contours[i].y);
+            coordinateSet.push_back(contours[i].width);
+            coordinateSet.push_back(contours[i].height);
+            m_Coordinates.push_back(coordinateSet);
+            coordinateSet.clear();
+        }
+    }
+    for(int i=0; i<4; ++i)
+    {
+        coordinateSet.push_back(0);
+    }
+    const int loop = (4-m_Coordinates.size());
+    for(int i=0; i<loop; ++i)
+    {
+        m_Coordinates.push_back(coordinateSet);
+    }
+}
+
+void StopProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detection, const std::vector<cv::Rect> &contours,
+    const cv::Scalar colorEdge = cv::Scalar(0, 0, 255), const cv::Scalar colorText = cv::Scalar(255, 0, 255), const std::string text = "STOP")
+{
     cv::Mat helpImage = image.clone();
 	for(unsigned int i=0; i<contours.size(); ++i)
     {
-        if(detetcion[i] )
+        if(detection[i] )
 	    {
             cv::rectangle(image, contours[i], colorEdge, -1);
         }
@@ -221,7 +252,7 @@ void StopProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detet
 	cv::addWeighted(helpImage, 0.8, image, 0.2, 0, image);
 	for(unsigned int i = 0 ; i <contours.size(); ++i) 
     {
-        if(detetcion[i] )
+        if(detection[i] )
         {
             cv::rectangle(image, contours[i], colorEdge, 3);
             cv::putText(image, text, cv::Point(contours[i].x+1, (contours[i].width+contours[i].y+18)), 
@@ -238,9 +269,10 @@ StopProcessor::StopProcessor() : m_StopDetected{false}
     m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "STOP", 1, 6);
 }
 
-void StopProcessor::setFrame(sensor_msgs::Image &rawFrame)
+void StopProcessor::setFrame(const sensor_msgs::Image &Frame)
 {
-    m_Frame = cv_bridge::toCvCopy(rawFrame, "bgr8")->image.clone();
+    m_Coordinates.clear();
+    m_Frame = cv_bridge::toCvCopy(Frame, "bgr8")->image.clone();
 
     auto helpImage = m_Frame.clone();
     auto numOfResizing = StopProcessor::resize(helpImage, 600); //resize image for faster performance!
@@ -250,9 +282,13 @@ void StopProcessor::setFrame(sensor_msgs::Image &rawFrame)
     auto contours = StopProcessor::getRedContours(redHueImage);
     contours = StopProcessor::getDetectedStopContours(helpImage, contours);
     auto images = StopProcessor::getTextImagesForOCR(numOfResizing, contours);
-    auto detection = StopProcessor::getDetectionFromOCR(images);
-    StopProcessor::drawLocations(m_Frame, detection, contours);
-    //cv::resize(m_Frame, m_Frame, cv::Size(m_Frame.cols*0.75, m_Frame.rows*0.75));
+    auto detection = StopProcessor::getDetectionPerRectFromOCR(images);
+    StopProcessor::setCoordinates(detection, contours);
+    StopProcessor::setDetection(detection, contours);
+    if(m_StopDetected)
+    {
+        StopProcessor::drawLocations(m_Frame, detection, contours);
+    }
 }
 
 sensor_msgs::Image StopProcessor::getProcessedFrame(void) const
@@ -276,7 +312,7 @@ std::string StopProcessor::getResult(void) const
     return "Stop Sign";
 }
 
-std::vector<int> StopProcessor::getCoordinates(void) const
+std::vector<std::vector<int>> StopProcessor::getCoordinates(void) const
 {
-
+    return m_Coordinates;
 }

@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="bachelor" type="CameraSimulator_Node" name="CameraSimulator_Node" launch-prefix="gnome-terminal --command"/>
+  <node pkg="bachelor" type="LaneDetector_Node" name="LaneDetector_Node" launch-prefix="gnome-terminal --command"/>
+  <node pkg="bachelor" type="Visualizer_Node" name="Visualizer_Node" launch-prefix="gnome-terminal --command"/>
+</launch>

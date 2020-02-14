@@ -1,4 +1,4 @@
-#include <bachelor/ImageProcessor/SpeedLimitProcessor.hpp>
+#include <bachelor/ImageProcessor/LimitProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
 #define SpeedCascadesPath "/home/rtrk/myWS/src/bachelor/cascade/"
@@ -37,7 +37,7 @@ static cv::Scalar HSVtoRGB(int H, double S, double V)
 	return cv::Scalar((Bs + m)*255, (Gs + m)*255, (Rs + m)*255);
 }
 
-void SpeedLimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path)
+void LimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path)
 {
     for(int i=0; i<size; ++i)
     {
@@ -53,12 +53,12 @@ void SpeedLimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int 
     }
 }
 
-void SpeedLimitProcessor::resize(cv::Mat &image, const float resizeFactor)
+void LimitProcessor::resize(cv::Mat &image, const float resizeFactor)
 {
     cv::resize(image, image, cv::Size(std::round(image.cols*resizeFactor), std::round(image.rows*resizeFactor)) );
 }
 
-void SpeedLimitProcessor::createMask(const cv::Mat &image)
+void LimitProcessor::createMask(const cv::Mat &image)
 {
     cv::Mat mask1 = cv::Mat::zeros(image.size(), CV_8UC1);
     cv::Mat mask2 = mask1.clone(), mask3 = mask1.clone();
@@ -104,14 +104,14 @@ void SpeedLimitProcessor::createMask(const cv::Mat &image)
     m_ImageMask = ~m_ImageMask;
 }
 
-cv::Mat SpeedLimitProcessor::makeROI(const cv::Mat &image) const
+cv::Mat LimitProcessor::makeROI(const cv::Mat &image) const
 {
     cv::Mat res;
     image.copyTo(res, m_ImageMask);
     return res;
 }
 
-void SpeedLimitProcessor::redColorSegmentation(const cv::Mat &sample, cv::Mat1b &result)
+void LimitProcessor::redColorSegmentation(const cv::Mat &sample, cv::Mat1b &result)
 {
     cv::Mat hsv;
     cv::cvtColor(sample, hsv, cv::COLOR_BGR2HSV);
@@ -127,7 +127,7 @@ void SpeedLimitProcessor::redColorSegmentation(const cv::Mat &sample, cv::Mat1b 
     cv::addWeighted(result, 1.0f, lowerRedHueRange, 1.0f, 0.0f, result);
 }
 
-std::vector<cv::Rect> SpeedLimitProcessor::getRedContours(const cv::Mat1b &hueImage) const
+std::vector<cv::Rect> LimitProcessor::getRedContours(const cv::Mat1b &hueImage) const
 {
     cv::Mat blured;
 	cv::GaussianBlur(hueImage, blured, cv::Size(9,9), 2,2);
@@ -152,7 +152,7 @@ std::vector<cv::Rect> SpeedLimitProcessor::getRedContours(const cv::Mat1b &hueIm
     return redRects; 
 }
 
-void SpeedLimitProcessor::preprocessContours(const cv::Mat &image, std::vector<cv::Rect> &contours)
+void LimitProcessor::preprocessContours(const cv::Mat &image, std::vector<cv::Rect> &contours)
 {
     for(int i=0; i<contours.size(); ++i)
     {
@@ -185,13 +185,7 @@ void SpeedLimitProcessor::preprocessContours(const cv::Mat &image, std::vector<c
     }    
 }
 
-/*
-int incr=0;
-std::vector<bool> check = {true};
-int numOfDirectories=0;
-std::string tmpFolder;
-*/
-std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const cv::Mat &image, const std::vector<cv::Rect> &contours)
+std::vector<cv::Rect> LimitProcessor::getDetectedSpeedLimitContours(const cv::Mat &image, const std::vector<cv::Rect> &contours)
 {
     std::vector<cv::Rect> speedRects;
     
@@ -201,40 +195,62 @@ std::vector<cv::Rect> SpeedLimitProcessor::getDetectedSpeedLimitContours(const c
         m_SpeedClassifier.detectMultiScale( image(contours[i]), speedLfound, 1.1f, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
 		if( !speedLfound.empty() )
 		{   
-            speedRects.push_back(contours[i]);
+            
+            speedLfound[0].x += contours[i].x;
+            speedLfound[0].y += contours[i].y;
+            speedRects.push_back(speedLfound[0]);
+            
+            //speedRects.push_back(contours[i]);
         }
-        /*
-        else
-        {
-            if(check[check.size()-1])
-            {
-                check.push_back(false);
-                std::stringstream ss;
-                ss << "mkdir ";
-                tmpFolder = std::string("/home/rtrk/Desktop/folder" + std::to_string(numOfDirectories) + '/');
-                ss << tmpFolder;
-                system(ss.str().c_str() );
-            }
-            if(!check[check.size()-1])
-            {
-                std::stringstream ss;
-                ss << tmpFolder << "crop_" << numOfDirectories << '_' << incr << ".jpg";
-                cv::imwrite(ss.str(), image(contours[i]));
-                incr++;
-                if(incr == 1001)
-                {
-                    check[check.size()-1] = true;
-                    incr = 0;
-                    ++numOfDirectories;
-                }
-            }            
-        }
-        */
 	}
     return speedRects;
 }
 
-std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitValues(const cv::Mat &image, const std::vector<cv::Rect> &contours)
+void LimitProcessor::resize(std::vector<cv::Rect> &contours, const float resizeFactor)
+{
+    for(int i=0; i<contours.size(); ++i)
+    {
+        contours[i].x = std::round(contours[i].x/resizeFactor);
+        contours[i].y = std::round(contours[i].y/resizeFactor);
+        contours[i].width = std::round(contours[i].height/resizeFactor);
+        contours[i].height = std::round(contours[i].width/resizeFactor);
+    }
+}
+
+int glob =0 ;
+std::vector<cv::Mat> LimitProcessor::getTextImagesForOCR(const cv::Mat &image, std::vector<cv::Rect> &contours)
+{
+    std::vector<cv::Mat> images;
+    cv::Mat1b redHue;
+    LimitProcessor::redColorSegmentation(image, redHue);
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1.5f, 1)); 
+    for(int i=0; i<contours.size(); ++i)
+    {
+        auto cropic = image(contours[i]).clone();
+        cv::Mat tmpCrop = redHue(contours[i]).clone();
+        
+        cv::floodFill(tmpCrop, cv::Point(0,0), cv::Scalar(255));
+        cv::erode(tmpCrop, tmpCrop, element);
+        
+        std::stringstream ss;
+        ss << "crop" << glob;
+
+
+        cv::Mat res;
+        auto tmpCrop2 = ~tmpCrop;
+        cropic.copyTo(res, tmpCrop2);
+
+        tmpCrop = tmpCrop2 & tmpCrop;
+
+        cv::imshow(ss.str(), res);
+        glob++;
+        images.push_back(tmpCrop);
+    }
+    return images;
+}
+
+/*
+std::vector<cv::Rect> LimitProcessor::getSpeedLimitValues(const cv::Mat &image, const std::vector<cv::Rect> &contours)
 {
     std::vector<cv::Rect> limits;
     bool assign = true;
@@ -266,22 +282,15 @@ std::vector<cv::Rect> SpeedLimitProcessor::getSpeedLimitValues(const cv::Mat &im
     }
     return limits;
 }
+*/
 
-void SpeedLimitProcessor::drawLocations(cv::Mat &image, std::vector<cv::Rect> &contours, const float resizeFactor,
+void LimitProcessor::drawLocations(cv::Mat &image, const std::vector<cv::Rect> &contours,
     const cv::Scalar colorText = cv::Scalar(255,255,0), const cv::Scalar colorEdge = cv::Scalar(255,0,0), const std::string text = "SPEED LIMIT ")
 {
     if(contours.empty() )
     {
         m_SpeedLimitDetected = false;
 		return;
-    }
-    for(int i=0; i<contours.size(); ++i)
-    {
-        auto *contour = &contours[i];
-        contour->x = std::round(contour->x/resizeFactor);
-        contour->y = std::round(contour->y/resizeFactor);
-        contour->width = std::round(contour->width/resizeFactor);
-        contour->height = std::round(contour->height/resizeFactor);
     }
     cv::Mat helpImage = image.clone();
 	for(unsigned int i=0; i<contours.size(); ++i)
@@ -292,54 +301,61 @@ void SpeedLimitProcessor::drawLocations(cv::Mat &image, std::vector<cv::Rect> &c
 	for(unsigned int i = 0 ; i <contours.size(); ++i) 
     {
         cv::rectangle(image, contours[i], colorEdge, 3);
-        cv::putText(image, (text+std::to_string(m_LimitValue) ), cv::Point(contours[i].x+1, (contours[i].y+contours[i].height+18)), 
+        cv::putText(image, (text/*+std::to_string(m_LimitValue)*/ ), cv::Point(contours[i].x+1, (contours[i].y+contours[i].height+18)), 
             cv::FONT_HERSHEY_DUPLEX, 0.7f, colorText, 2);
     }
     m_SpeedLimitDetected = true;
 }
 
-SpeedLimitProcessor::SpeedLimitProcessor() : m_SpeedLimitDetected{false}, 
-    m_NumOfClassifiers{ sizeof(m_LimitRecognizeClassifier) / sizeof(*m_LimitRecognizeClassifier) },
-    m_PossibleLimitValues{40,80,50,100,130}
+LimitProcessor::LimitProcessor() : m_SpeedLimitDetected{false}//, 
+    //m_NumOfClassifiers{ sizeof(m_LimitRecognizeClassifier) / sizeof(*m_LimitRecognizeClassifier) },
+    //m_PossibleLimitValues{40,80,50,100,130}
 {
     const std::string Path = SpeedLimitClassifier;
-    SpeedLimitProcessor::loadCascade(&m_SpeedClassifier, 1, &Path);
-    const std::string Paths[2] = {SpeedLimit40Classifier, SpeedLimit80Classifier};
-    SpeedLimitProcessor::loadCascade(m_LimitRecognizeClassifier, m_NumOfClassifiers, Paths);
+    LimitProcessor::loadCascade(&m_SpeedClassifier, 1, &Path);
+    //const std::string Paths[2] = {SpeedLimit40Classifier, SpeedLimit80Classifier};
+    //LimitProcessor::loadCascade(m_LimitRecognizeClassifier, m_NumOfClassifiers, Paths);
 
+    /*
     int h=0;
     for(int i=0; i<m_NumOfClassifiers; ++i)
     {
         m_ColorMap[m_PossibleLimitValues[i]] = HSVtoRGB(h, 1.0f, 1.0f);
         h += 30;
     }
+    */
 }
 
-void SpeedLimitProcessor::setFrame(sensor_msgs::Image &rawFrame)
+#define Lilac cv::Scalar(255,0,255)
+void LimitProcessor::setFrame(const sensor_msgs::Image &Frame)
 {
-    m_Frame = cv_bridge::toCvCopy(rawFrame, "bgr8")->image.clone();
+    m_Frame = cv_bridge::toCvCopy(Frame, "bgr8")->image.clone();
     auto helpImage = m_Frame.clone();
-    SpeedLimitProcessor::resize(helpImage, 0.6f);
+    const float resizeFactor = 0.6f;
+    LimitProcessor::resize(helpImage, resizeFactor);
     
     if(m_ImageMask.empty() )
     {
-        SpeedLimitProcessor::createMask(helpImage);
+        LimitProcessor::createMask(helpImage);
     }
-
-    auto imageROI = SpeedLimitProcessor::makeROI(helpImage);
+    auto imageROI = LimitProcessor::makeROI(helpImage);
     //cv::imshow("ROI", imageROI);
     cv::Mat1b redHueImage;  //binary mask
-    SpeedLimitProcessor::redColorSegmentation(imageROI, redHueImage);
-    auto contours =  SpeedLimitProcessor::getRedContours(redHueImage);
-    SpeedLimitProcessor::preprocessContours(helpImage, contours);
-    contours = SpeedLimitProcessor::getDetectedSpeedLimitContours(helpImage, contours);
-    //m_Frame = helpImage.clone();//delete
-
-    contours = SpeedLimitProcessor::getSpeedLimitValues(helpImage, contours);
-    SpeedLimitProcessor::drawLocations(m_Frame, contours, 0.6f, m_ColorMap[m_LimitValue]);
+    LimitProcessor::redColorSegmentation(imageROI, redHueImage);
+    auto contours =  LimitProcessor::getRedContours(redHueImage);
+    LimitProcessor::preprocessContours(helpImage, contours);
+    contours = LimitProcessor::getDetectedSpeedLimitContours(helpImage, contours);
+    LimitProcessor::resize(contours, resizeFactor);
+    if(contours.size() )
+    {
+       getTextImagesForOCR(m_Frame, contours);
+    }
+    //contours = LimitProcessor::getSpeedLimitValues(helpImage, contours);
+    
+    LimitProcessor::drawLocations(m_Frame, contours); //replaced Lilac with m_ColorMap[m_LimitValue]
 }
 
-sensor_msgs::Image SpeedLimitProcessor::getProcessedFrame(void) const
+sensor_msgs::Image LimitProcessor::getProcessedFrame(void) const
 {
     cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
     cv_ptr->encoding = "bgr8";
@@ -350,12 +366,12 @@ sensor_msgs::Image SpeedLimitProcessor::getProcessedFrame(void) const
     return image1;
 }
 
-bool SpeedLimitProcessor::getDetection(void) const
+bool LimitProcessor::getDetection(void) const
 {
     return m_SpeedLimitDetected;
 }
 
-std::string SpeedLimitProcessor::getResult(void) const
+std::string LimitProcessor::getResult(void) const
 {
     if(m_LimitValue)
     {
@@ -367,7 +383,7 @@ std::string SpeedLimitProcessor::getResult(void) const
     }
 }
 
-std::vector<int> SpeedLimitProcessor::getCoordinates(void) const
+std::vector<std::vector<int>> LimitProcessor::getCoordinates(void) const
 {
 
 }

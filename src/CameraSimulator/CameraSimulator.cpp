@@ -3,16 +3,11 @@
 #include <cv_bridge/cv_bridge.h>
 
 CameraSimulator::CameraSimulator() :
-	m_FrameEmiter{std::make_unique<DataSender<sensor_msgs::Image>>(fromCAMtoOBJDET) }, //fromVIDEOPtoOBJDET
-	m_WatchdogEmiter{std::make_unique<DataSender<std_msgs::Bool>>(fromCAMtoWDOG) },
+	m_FrameEmiter{std::make_unique<DataSender<sensor_msgs::Image>>(RawFrame) }, //fromVIDEOPtoOBJDET
+	m_WatchdogEmiter{std::make_unique<DataSender<std_msgs::Bool>>(ImHere_CamSim) },
 	m_NodeMSG{false}
 {
-	system("clear");
-}
 
-CameraSimulator::~CameraSimulator()
-{
-	system("clear");
 }
 
 void CameraSimulator::setVideo(cv::VideoCapture &_video)
@@ -28,11 +23,11 @@ void CameraSimulator::checkMsgs(void)
 	m_PauseVideo = m_NodeMSG;
 }
 
-void CameraSimulator::update(std_msgs::Bool &_data, Topics _subjTopic)
+void CameraSimulator::update(const std_msgs::Bool &_msg, Topics _subjTopic)
 {
-	if(_subjTopic == fromDISPtoCAM)
+	if(_subjTopic == PauseOrPlay)
 	{
-		m_NodeMSG = _data.data;
+		m_NodeMSG = _msg.data;
 	}
 }
 

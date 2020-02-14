@@ -11,11 +11,11 @@ public:
     explicit IImageProcessor() = default;
     virtual ~IImageProcessor() = default;
 
-    virtual void setFrame(sensor_msgs::Image &rawFrame) = 0;
+    virtual void setFrame(const sensor_msgs::Image &Frame) = 0;
     virtual sensor_msgs::Image getProcessedFrame(void) const = 0;
     virtual bool getDetection(void) const = 0;
     virtual std::string getResult(void) const = 0;
-    virtual std::vector<int> getCoordinates(void) const = 0;
+    virtual std::vector<std::vector<int>> getCoordinates(void) const = 0;
 };
 
 #endif //BACHELOR_IMAGEPROCESSOR_IIMAGEPROCESSOR_HPP

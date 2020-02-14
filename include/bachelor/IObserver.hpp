@@ -10,7 +10,7 @@ public:
 	explicit IObserver() = default;
 	virtual ~IObserver() = default;
 
-	virtual void update(T &_data, Topics _subjTopic) = 0;	//observer method
+	virtual void update(const T &_msg, Topics _subjTopic) = 0;	//observer method
 	virtual bool doStuff(void) = 0;
 };
 
