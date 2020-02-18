@@ -188,6 +188,15 @@ target_link_libraries(detTest
   ${catkin_LIBRARIES}
 )
 
+add_executable(detTest2 test_node/help.cpp ) 
+
+target_link_libraries(detTest2 
+  _DetectorLib
+  _ImageProcessorLib
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES}
+)
+
 ##############################################
 
 #############

@@ -143,7 +143,8 @@ std::vector<cv::Mat> StopProcessor::getTextImagesForOCR(const int numOfResizing,
 
 std::vector<bool> StopProcessor::getDetectionPerRectFromOCR(const std::vector<cv::Mat> &images)
 {
-    std::vector<bool> detection;
+    std::vector<bool> detection(images.size() );
+    int i=0;
     for(auto image : images)
     {
         std::string word;
@@ -180,12 +181,13 @@ std::vector<bool> StopProcessor::getDetectionPerRectFromOCR(const std::vector<cv
         }
         if(incr >= 2)
         {
-            detection.push_back(true);
+            detection[i] = true;
         }
         else
         {
-            detection.push_back(false);   
+            detection[i] = false;   
         }
+        ++i;
     }
     return detection;
 }

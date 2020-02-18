@@ -14,6 +14,7 @@ private:
     cv::Mat m_Frame, m_ImageMask;
     bool m_SpeedLimitDetected;
     int m_LimitValue;
+    cv::Ptr<cv::text::OCRTesseract> m_OCR;
     //std::map<int, cv::Scalar> m_ColorMap;
     //const int m_NumOfClassifiers;
     //const int m_PossibleLimitValues[5];
@@ -27,8 +28,9 @@ private:
     void preprocessContours(const cv::Mat &image, std::vector<cv::Rect> &contours);
     std::vector<cv::Rect> getDetectedSpeedLimitContours(const cv::Mat &image, const std::vector<cv::Rect> &contours);
     void resize(std::vector<cv::Rect> &contours, const float resizeFactor);
+    cv::Mat approximateCircle(cv::Mat binaryMask, int dilation_elem);
     std::vector<cv::Mat> getTextImagesForOCR(const cv::Mat &image, std::vector<cv::Rect> &contours);
-    
+    std::vector<bool> getRecognizedLimits(const std::vector<cv::Mat> &images);
 
     //std::vector<cv::Rect> getSpeedLimitValues(const cv::Mat &image, const std::vector<cv::Rect> &contours);
     void drawLocations(cv::Mat &image, const std::vector<cv::Rect> &contours,

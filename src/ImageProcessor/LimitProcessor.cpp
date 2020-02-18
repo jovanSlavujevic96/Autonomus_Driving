@@ -4,13 +4,17 @@
 #define SpeedCascadesPath "/home/rtrk/myWS/src/bachelor/cascade/"
 #define SpeedLimitClassifier SpeedCascadesPath "speed_limit_signs/classifier/cascade2.xml"
 //#define SpeedLimit80Classifier SpeedCascadesPath "speed_limit_signs/classifier/cascade_80.xml"
-#define SpeedLimit80Classifier SpeedCascadesPath "speed_limit_80/classifier/cascade.xml"
-#define SpeedLimit40Classifier SpeedCascadesPath "speed_limit_40/classifier/cascade.xml"
+
+static cv::Mat SaveThenLoad(const cv::Mat &image)
+{
+    cv::imwrite("/home/rtrk/Pictures/test/tmp.png", image);
+    return (cv::imread("/home/rtrk/Pictures/test/tmp.png"));
+}
 
 static cv::Scalar HSVtoRGB(int H, double S, double V) 
 {
 	double C = S * V;
-	double X = C * (1 - abs(fmod(H / 60.0, 2) - 1));
+	double X = C * (1 - std::abs(std::fmod(H / 60.0, 2) - 1));
 	double m = V - C;
 	double Rs, Gs, Bs;
 
@@ -129,15 +133,14 @@ void LimitProcessor::redColorSegmentation(const cv::Mat &sample, cv::Mat1b &resu
 
 std::vector<cv::Rect> LimitProcessor::getRedContours(const cv::Mat1b &hueImage) const
 {
+    std::vector<cv::Rect> redRects;
+
     cv::Mat blured;
 	cv::GaussianBlur(hueImage, blured, cv::Size(9,9), 2,2);
-
-    std::vector<cv::Rect> redRects;
-    std::vector<std::vector<cv::Point> > contours;
+    std::vector<std::vector<cv::Point>> contours;
 	std::vector<cv::Vec4i> hierarchy;
 	cv::findContours(blured, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-    
-    std::vector<std::vector<cv::Point> > contours_poly(contours.size() );
+    std::vector<std::vector<cv::Point>> contours_poly(contours.size() );
 	for(int i = 0; i < contours.size(); ++i)
     {
 		cv::approxPolyDP((cv::Mat)contours[i], contours_poly[i], 3, true);
@@ -212,41 +215,196 @@ void LimitProcessor::resize(std::vector<cv::Rect> &contours, const float resizeF
     {
         contours[i].x = std::round(contours[i].x/resizeFactor);
         contours[i].y = std::round(contours[i].y/resizeFactor);
-        contours[i].width = std::round(contours[i].height/resizeFactor);
-        contours[i].height = std::round(contours[i].width/resizeFactor);
+        contours[i].width = std::round(contours[i].width/resizeFactor);
+        contours[i].height = std::round(contours[i].height/resizeFactor);
     }
 }
 
-int glob =0 ;
+cv::Mat LimitProcessor::approximateCircle(cv::Mat binaryMask, int dilation_elem = 0)
+{
+    cv::cvtColor(binaryMask, binaryMask, cv::COLOR_BGR2GRAY);
+    int dilation_type = 0;
+    switch(dilation_elem)
+    {
+        case 0:
+            dilation_type = cv::MORPH_RECT; 
+        break;
+
+        case 1:
+            dilation_type = cv::MORPH_CROSS; 
+        break;
+
+        case 2:
+            dilation_type = cv::MORPH_ELLIPSE;
+        break;
+    }
+
+    int size = 1;
+    cv::Mat element = getStructuringElement(dilation_type, cv::Size(2 * size + 1, 2 * size + 1), cv::Point(size, size));
+    cv::morphologyEx(binaryMask, binaryMask, cv::MORPH_OPEN, element);
+    std::vector<cv::Point2f> points;
+    for (int x = 0; x < binaryMask.cols; x++)
+    {
+        for (int y = 0; y < binaryMask.rows; y++)
+        {
+            if (binaryMask.at<uchar>(y, x) > 0)
+            {
+                points.push_back(cv::Point2f(x, y));
+            }
+        }
+    }
+    float xn = 0, xsum = 0;
+    float yn = 0, ysum = 0;
+    float n = points.size();
+
+    for (int i = 0; i < n; i++)
+    {
+        xsum = xsum + points[i].x;
+        ysum = ysum + points[i].y;
+    }
+    xn = xsum / n;
+    yn = ysum / n;
+
+    float ui = 0;
+    float vi = 0;
+    float suu = 0, suuu = 0;
+    float svv = 0, svvv = 0;
+    float suv = 0;
+    float suvv = 0, svuu = 0;
+
+    for (int i = 0; i < n; i++)
+    {
+        ui = points[i].x - xn;
+        vi = points[i].y - yn;
+
+        suu = suu + (ui * ui);
+        suuu = suuu + (ui * ui * ui);
+
+        svv = svv + (vi * vi);
+        svvv = svvv + (vi * vi * vi);
+
+        suv = suv + (ui * vi);
+
+        suvv = suvv + (ui * vi * vi);
+        svuu = svuu + (vi * ui * ui);
+    }
+
+    cv::Mat A = (cv::Mat_<float>(2, 2) << suu, suv, suv, svv);
+    cv::Mat B = (cv::Mat_<float>(2, 1) << 0.5*(suuu + suvv),0.5*(svvv + svuu));
+    cv::Mat abc;
+    cv::solve(A, B, abc);
+
+    float u = abc.at<float>(0);
+    float v = abc.at<float>(1);
+
+    float x = u + xn;
+    float y = v + yn;
+
+    float alpha = u * u + v * v + ((suu + svv) / n);
+    float r = sqrt(alpha);
+
+    cv::cvtColor(binaryMask, binaryMask, cv::COLOR_GRAY2BGR);
+    if(x>0 && y>0 && r>0)
+    {
+        cv::circle(binaryMask, cv::Point(x, y), r, cv::Scalar(255, 0, 0), 1, 8, 0);
+    }
+    return binaryMask;
+}
+
 std::vector<cv::Mat> LimitProcessor::getTextImagesForOCR(const cv::Mat &image, std::vector<cv::Rect> &contours)
 {
-    std::vector<cv::Mat> images;
+    std::vector<cv::Mat> images(contours.size() );
     cv::Mat1b redHue;
     LimitProcessor::redColorSegmentation(image, redHue);
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1.5f, 1)); 
     for(int i=0; i<contours.size(); ++i)
     {
-        auto cropic = image(contours[i]).clone();
-        cv::Mat tmpCrop = redHue(contours[i]).clone();
+        auto binaryMaskCrop = SaveThenLoad(redHue(contours[i]) );
+        auto originalCrop = SaveThenLoad(image(contours[i]) );
+        auto approxCircle = LimitProcessor::approximateCircle(binaryMaskCrop,2);
+
+        cv::Mat1b mask;
+        cv::inRange(approxCircle, cv::Scalar(255,0,0), cv::Scalar(255,0,0), mask );
+        auto CONTOURS = LimitProcessor::getRedContours(mask);
+        if(CONTOURS.empty() )
+        {
+            images.push_back(cv::Mat());
+            continue;
+        }
+        cv::floodFill(mask, cv::Point(0,0), cv::Scalar(255));
+        cv::erode(mask, mask, element);
+        mask = ~mask;
+
+        auto alpha = SaveThenLoad(mask);
+        cv::Mat foreground =  SaveThenLoad(image(contours[i]));
+        cv::Mat background = cv::Mat(foreground.rows, foreground.cols, CV_8UC3, cv::Scalar(255,255,255) ); //white background
         
-        cv::floodFill(tmpCrop, cv::Point(0,0), cv::Scalar(255));
-        cv::erode(tmpCrop, tmpCrop, element);
+        foreground.convertTo(foreground, CV_32FC3);
+        background.convertTo(background, CV_32FC3);
+        alpha.convertTo(alpha, CV_32FC3, 1.0f/255);
         
-        std::stringstream ss;
-        ss << "crop" << glob;
+        cv::Mat ouImage = cv::Mat::zeros(foreground.size(), foreground.type());
+        cv::multiply(alpha, foreground, foreground); 
+        cv::multiply(cv::Scalar::all(1.0)-alpha, background, background); 
+        cv::add(foreground, background, ouImage);
 
+        cv::Mat FINAL = SaveThenLoad(ouImage);
+        FINAL = FINAL(CONTOURS[0]);
+        const float factor = 0.2f;
+        auto P1 = cv::Point(std::round(FINAL.cols*factor), std::round(FINAL.rows*factor));
+        auto P2 = cv::Point(std::round(FINAL.cols*(1-factor)), std::round(FINAL.rows*(1-factor)) );
+        FINAL = FINAL(cv::Rect(P1, P2));  
 
-        cv::Mat res;
-        auto tmpCrop2 = ~tmpCrop;
-        cropic.copyTo(res, tmpCrop2);
-
-        tmpCrop = tmpCrop2 & tmpCrop;
-
-        cv::imshow(ss.str(), res);
-        glob++;
-        images.push_back(tmpCrop);
+        images[i] = FINAL.clone();
     }
     return images;
+}
+
+std::vector<bool> LimitProcessor::getRecognizedLimits(const std::vector<cv::Mat> &images)
+{
+    std::vector<bool> detection(images.size() );
+    int i=0;
+    for(auto image : images)
+    {
+        if(image.empty() )
+        {
+            detection[i] = false;
+            continue;
+        }
+        std::string word;
+        m_OCR->run(image, word, NULL, NULL, NULL, cv::text::OCR_LEVEL_WORD);
+        std::cout << "word: " << word << std::endl;
+
+        bool _80[2] = {false};
+        int incr=0;
+        for(auto letter : word)
+        {
+            if( (letter == '8' || letter == 'B' || letter == 'U') && !_80[0])
+            {
+                _80[0] = true;
+                incr++;
+            }
+            else if( (letter == '0' || letter == 'O' || letter == 'o') && !_80[1])
+            {
+                _80[1] = true;
+                incr++;
+            }
+            if(incr == 2)
+            {
+                break;
+            }
+        }
+        if(incr == 2)
+        {
+            detection[i] = true;
+        }
+        else
+        {
+            detection[i] = false;
+        }
+        ++i;
+    }
+    return detection;
 }
 
 /*
@@ -313,6 +471,7 @@ LimitProcessor::LimitProcessor() : m_SpeedLimitDetected{false}//,
 {
     const std::string Path = SpeedLimitClassifier;
     LimitProcessor::loadCascade(&m_SpeedClassifier, 1, &Path);
+    m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "0123456789", 1, 6);
     //const std::string Paths[2] = {SpeedLimit40Classifier, SpeedLimit80Classifier};
     //LimitProcessor::loadCascade(m_LimitRecognizeClassifier, m_NumOfClassifiers, Paths);
 
@@ -345,10 +504,12 @@ void LimitProcessor::setFrame(const sensor_msgs::Image &Frame)
     auto contours =  LimitProcessor::getRedContours(redHueImage);
     LimitProcessor::preprocessContours(helpImage, contours);
     contours = LimitProcessor::getDetectedSpeedLimitContours(helpImage, contours);
-    LimitProcessor::resize(contours, resizeFactor);
+
     if(contours.size() )
     {
-       getTextImagesForOCR(m_Frame, contours);
+        LimitProcessor::resize(contours, resizeFactor);
+        auto images = LimitProcessor::getTextImagesForOCR(m_Frame, contours);
+        auto detection = LimitProcessor::getRecognizedLimits(images);
     }
     //contours = LimitProcessor::getSpeedLimitValues(helpImage, contours);
     
