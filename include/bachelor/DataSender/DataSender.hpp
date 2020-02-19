@@ -13,10 +13,10 @@ class DataSender : public IDataSender <T1>
     std::unique_ptr<ImplDataSender> m_PimplDataSender;
     Topics m_Topic;
 public:
-    DataSender(const Topics _topicName);
+    DataSender(const Topics topicName);
     virtual ~DataSender();
 
-    void Publish(T1 _data) override;
+    void Publish(T1& data) override;
     Topics getTopic(void) const override;
 };
 

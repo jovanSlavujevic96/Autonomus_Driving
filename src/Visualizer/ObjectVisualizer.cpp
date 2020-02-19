@@ -2,32 +2,29 @@
 
 ObjectVisualizer::ObjectVisualizer(VisualizerType type) : m_VisualizerType{type}
 {
-    if(type == Stop)
+    if(type == StopVizType)
     {
         this->m_SignName = "STOP";
+        this->m_TextColor = cv::Scalar(0,0,255); //Red;
+        this->m_RectColor = cv::Scalar(255,0,255); //Lilac;
     }
 }
 
-void ObjectVisualizer::setCoordinates(const bachelor::Coordinates &coordinates) 
+bool ObjectVisualizer::doStuff(void)
+{
+    //not in use
+    return true;
+}
+
+void ObjectVisualizer::update(const bachelor::Coordinates &_msg, Topics _subjTopic)
 {
     for(int i=0; i<4; ++i)
     {
-        m_Rects.push_back(cv::Rect(coordinates.X1[i], coordinates.Y1[i], coordinates.X2_Width[i], coordinates.Y2_Height[i]) );
+        m_Rects.push_back(cv::Rect(_msg.X1[i], _msg.Y1[i], _msg.X2_Width[i], _msg.Y2_Height[i]) );
     }
 }
 
-void ObjectVisualizer::setColor(const cv::Scalar &color)
-{
-    m_RectColor = color;
-}
-
-void ObjectVisualizer::setText(const std::string text, const cv::Scalar &color)
-{
-    m_SignName = text;
-    m_TextColor = color;
-}
-
-void ObjectVisualizer::drawMe(cv::Mat &frame)
+void ObjectVisualizer::draw(cv::Mat &frame)
 {
     int size=0;
     for(int i=0; i<m_Rects.size(); ++i)

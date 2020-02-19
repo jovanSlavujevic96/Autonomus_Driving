@@ -1,5 +1,5 @@
-#ifndef BACHELOR_CAMERASIMULATOR_CAMERASIMULATOR_HPP
-#define BACHELOR_CAMERASIMULATOR_CAMERASIMULATOR_HPP
+#ifndef BACHELOR_CAMERASIMULATOR_HPP_
+#define BACHELOR_CAMERASIMULATOR_HPP_
 
 #include <bachelor/IObserver.hpp>
 #include <bachelor/DataSender/IDataSender.hpp>
@@ -10,7 +10,6 @@
 #include <std_msgs/Bool.h>
 #include <image_transport/image_transport.h>
 
-template class IObserver<std_msgs::Bool>;
 class CameraSimulator : public IObserver<std_msgs::Bool>
 {
 private:
@@ -25,10 +24,10 @@ public:
 	CameraSimulator();
 	virtual ~CameraSimulator() = default;
 
-	void setVideo(cv::VideoCapture &_video);
+	void setVideo(cv::VideoCapture& video);
 
-	void update(const std_msgs::Bool &_msg, Topics _subjTopic) override;
+	void update(const std_msgs::Bool& msg, Topics subjTopic) override;
 	bool doStuff(void) override;
 };
 
-#endif //BACHELOR_CAMERASIMULATOR_CAMERASIMULATOR_HPP
+#endif //BACHELOR_CAMERASIMULATOR_HPP_

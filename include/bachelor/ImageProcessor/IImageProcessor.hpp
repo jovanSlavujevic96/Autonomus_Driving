@@ -11,7 +11,7 @@ public:
     explicit IImageProcessor() = default;
     virtual ~IImageProcessor() = default;
 
-    virtual void setFrame(const sensor_msgs::Image &Frame) = 0;
+    virtual void setFrame(const sensor_msgs::Image& frame) = 0;
     virtual sensor_msgs::Image getProcessedFrame(void) const = 0;
     virtual bool getDetection(void) const = 0;
     virtual std::string getResult(void) const = 0;

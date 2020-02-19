@@ -1,4 +1,4 @@
-#include <bachelor/CameraSimulator/CameraSimulator.hpp>
+#include <bachelor/CameraSimulator.hpp>
 #include <bachelor/DataReceiver/DataReceiver.hpp>
 
 #include <ros/ros.h>

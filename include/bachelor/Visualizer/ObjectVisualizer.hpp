@@ -14,10 +14,10 @@ public:
     ObjectVisualizer(VisualizerType type);
     virtual ~ObjectVisualizer() = default;
 
-    void setCoordinates(const bachelor::Coordinates &coordinates) override;
-    void setColor(const cv::Scalar &color) override;
-    void setText(const std::string text, const cv::Scalar &color) override;
-    void drawMe(cv::Mat &frame) override;
+    void update(const bachelor::Coordinates& msg, Topics subjTopic) override;
+    bool doStuff(void) override;
+
+    void draw(cv::Mat& frame) override;
     VisualizerType getVisualizerType(void) override;
 };
 

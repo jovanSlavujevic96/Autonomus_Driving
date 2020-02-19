@@ -1,47 +1,51 @@
 #include <bachelor/ImageProcessor/LimitProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
-#define SpeedCascadesPath "/home/rtrk/myWS/src/bachelor/cascade/"
-#define SpeedLimitClassifier SpeedCascadesPath "speed_limit_signs/classifier/cascade2.xml"
-//#define SpeedLimit80Classifier SpeedCascadesPath "speed_limit_signs/classifier/cascade_80.xml"
+#define SpeedLimitClassifier "/home/rtrk/myWS/src/bachelor/cascade/speed_limit_sign.xml"
 
-static cv::Mat SaveThenLoad(const cv::Mat &image)
+#define element1 (cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1.5f, 1)) )
+#define element2 (cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 + 1, 2 + 1), cv::Point(1, 1)) )
+
+namespace jovan //help functions
 {
-    cv::imwrite("/home/rtrk/Pictures/test/tmp.png", image);
-    return (cv::imread("/home/rtrk/Pictures/test/tmp.png"));
-}
+    static cv::Mat SaveThenLoad(const cv::Mat& image)
+    {
+        cv::imwrite("tmp.png", image);
+        return (cv::imread("tmp.png"));
+    }
 
-static cv::Scalar HSVtoRGB(int H, double S, double V) 
-{
-	double C = S * V;
-	double X = C * (1 - std::abs(std::fmod(H / 60.0, 2) - 1));
-	double m = V - C;
-	double Rs, Gs, Bs;
+    static cv::Scalar HSVtoRGB(int H, double S, double V) 
+    {
+        double C = S * V;
+        double X = C * (1 - std::abs(std::fmod(H / 60.0, 2) - 1));
+        double m = V - C;
+        double Rs, Gs, Bs;
 
-	if(H >= 0 && H < 60) {
-		Rs = C;
-		Gs = X;
-		Bs = 0;	
-	}
-	else if(H >= 60 && H < 120) {	
-		Rs = X;
-		Gs = C;
-		Bs = 0;	
-	}
-	else if(H >= 120 && H < 180) {
-		Rs = 0;
-		Gs = C;
-		Bs = X;	
-	}
-	else if(H >= 180 && H < 240) {
-		Rs = 0;
-		Gs = X;
-		Bs = C;	
-	}
-	return cv::Scalar((Bs + m)*255, (Gs + m)*255, (Rs + m)*255);
-}
+        if(H >= 0 && H < 60) {
+            Rs = C;
+            Gs = X;
+            Bs = 0;	
+        }
+        else if(H >= 60 && H < 120) {	
+            Rs = X;
+            Gs = C;
+            Bs = 0;	
+        }
+        else if(H >= 120 && H < 180) {
+            Rs = 0;
+            Gs = C;
+            Bs = X;	
+        }
+        else if(H >= 180 && H < 240) {
+            Rs = 0;
+            Gs = X;
+            Bs = C;	
+        }
+        return cv::Scalar((Bs + m)*255, (Gs + m)*255, (Rs + m)*255);
+    }
+};
 
-void LimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int size, const std::string *path)
+void LimitProcessor::loadCascade(cv::CascadeClassifier* cascade, const int size, const std::string* path)
 {
     for(int i=0; i<size; ++i)
     {
@@ -57,21 +61,32 @@ void LimitProcessor::loadCascade(cv::CascadeClassifier *cascade, const int size,
     }
 }
 
-void LimitProcessor::resize(cv::Mat &image, const float resizeFactor)
+void LimitProcessor::resize(cv::Mat& imageToResize, const float resizeFactor)
 {
-    cv::resize(image, image, cv::Size(std::round(image.cols*resizeFactor), std::round(image.rows*resizeFactor)) );
+    cv::resize(imageToResize, imageToResize, cv::Size(std::round(imageToResize.cols*resizeFactor), std::round(imageToResize.rows*resizeFactor)) );
 }
 
-void LimitProcessor::createMask(const cv::Mat &image)
+void LimitProcessor::resize(std::vector<cv::Rect>& contoursToResize, const float resizeFactor)
 {
-    cv::Mat mask1 = cv::Mat::zeros(image.size(), CV_8UC1);
+    for(int i=0; i<contoursToResize.size(); ++i)
+    {
+        contoursToResize[i].x = std::round(contoursToResize[i].x*resizeFactor);
+        contoursToResize[i].y = std::round(contoursToResize[i].y*resizeFactor);
+        contoursToResize[i].width = std::round(contoursToResize[i].width*resizeFactor);
+        contoursToResize[i].height = std::round(contoursToResize[i].height*resizeFactor);
+    }
+}
+
+void LimitProcessor::createROImask(const cv::Mat& frame)
+{
+    cv::Mat mask1 = cv::Mat::zeros(frame.size(), CV_8UC1);
     cv::Mat mask2 = mask1.clone(), mask3 = mask1.clone();
 
     //for specific video
     int x[4]={0}, y[4]={0};
     x[0] = 0, y[0] = 430;  
-    x[1] = image.cols, y[1] = y[0];
-    x[2] = x[1], y[2] = image.rows;
+    x[1] = frame.cols, y[1] = y[0];
+    x[2] = x[1], y[2] = frame.rows;
     x[3] = 0, y[3] = y[2];
   
     std::vector<cv::Point> pts(4);
@@ -82,8 +97,8 @@ void LimitProcessor::createMask(const cv::Mat &image)
     // Create a binary polygon mask
     cv::fillConvexPoly(mask1, pts, cv::Scalar(255, 0, 0) );
 
-    x[0] = std::round(image.cols*0.44), y[0] = 430;
-    x[1] = std::round(image.cols*0.5), y[1] = y[0];
+    x[0] = std::round(frame.cols*0.44), y[0] = 430;
+    x[1] = std::round(frame.cols*0.5), y[1] = y[0];
     x[2] = x[1], y[2] = 0;
     x[3] = x[0], y[3] = y[2];
   
@@ -94,7 +109,7 @@ void LimitProcessor::createMask(const cv::Mat &image)
     cv::fillConvexPoly(mask2, pts, cv::Scalar(255, 0, 0));
 
     x[0] = 0, y[0] = 0;
-    x[1] = image.cols, y[1] = y[0];
+    x[1] = frame.cols, y[1] = y[0];
     x[2] = x[1], y[2] = 185;
     x[3] = x[0], y[3] = y[2];
   
@@ -108,14 +123,14 @@ void LimitProcessor::createMask(const cv::Mat &image)
     m_ImageMask = ~m_ImageMask;
 }
 
-cv::Mat LimitProcessor::makeROI(const cv::Mat &image) const
+cv::Mat LimitProcessor::getROIframe(const cv::Mat& frame) const
 {
     cv::Mat res;
-    image.copyTo(res, m_ImageMask);
+    frame.copyTo(res, m_ImageMask);
     return res;
 }
 
-void LimitProcessor::redColorSegmentation(const cv::Mat &sample, cv::Mat1b &result)
+void LimitProcessor::redColorSegmentationMask(const cv::Mat& sample, cv::Mat1b& result)
 {
     cv::Mat hsv;
     cv::cvtColor(sample, hsv, cv::COLOR_BGR2HSV);
@@ -131,7 +146,7 @@ void LimitProcessor::redColorSegmentation(const cv::Mat &sample, cv::Mat1b &resu
     cv::addWeighted(result, 1.0f, lowerRedHueRange, 1.0f, 0.0f, result);
 }
 
-std::vector<cv::Rect> LimitProcessor::getRedContours(const cv::Mat1b &hueImage) const
+std::vector<cv::Rect> LimitProcessor::getRedContours(const cv::Mat1b& hueImage) const
 {
     std::vector<cv::Rect> redRects;
 
@@ -155,7 +170,7 @@ std::vector<cv::Rect> LimitProcessor::getRedContours(const cv::Mat1b &hueImage) 
     return redRects; 
 }
 
-void LimitProcessor::preprocessContours(const cv::Mat &image, std::vector<cv::Rect> &contours)
+void LimitProcessor::increaseRectsForClassification(const cv::Mat& frame, std::vector<cv::Rect>& contours)
 {
     for(int i=0; i<contours.size(); ++i)
     {
@@ -175,8 +190,8 @@ void LimitProcessor::preprocessContours(const cv::Mat &image, std::vector<cv::Re
         for(int incrVal = limit; incrVal >= 1; --incrVal)
         {
             if( (contour->x-incrVal)>=0 && (contour->y-incrVal)>=0 && 
-                (contour->x+contour->width+2*incrVal)<=image.cols && 
-                (contour->y+contour->height+2*incrVal)<=image.rows )
+                (contour->x+contour->width+2*incrVal)<=frame.cols && 
+                (contour->y+contour->height+2*incrVal)<=frame.rows )
             {
                 contour->x -= incrVal;
                 contour->y -= incrVal;
@@ -188,60 +203,29 @@ void LimitProcessor::preprocessContours(const cv::Mat &image, std::vector<cv::Re
     }    
 }
 
-std::vector<cv::Rect> LimitProcessor::getDetectedSpeedLimitContours(const cv::Mat &image, const std::vector<cv::Rect> &contours)
+std::vector<cv::Rect> LimitProcessor::getDetectedLimitContours(const cv::Mat& frame, const std::vector<cv::Rect>& contours)
 {
     std::vector<cv::Rect> speedRects;
     
     for(int i=0; i<contours.size(); ++i)
 	{
 		std::vector<cv::Rect> speedLfound;
-        m_SpeedClassifier.detectMultiScale( image(contours[i]), speedLfound, 1.1f, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
+        m_SpeedClassifier.detectMultiScale( frame(contours[i]), speedLfound, 1.1f, 2, 0 | cv::CASCADE_SCALE_IMAGE, cv::Size(25, 25));
 		if( !speedLfound.empty() )
 		{   
             
             speedLfound[0].x += contours[i].x;
             speedLfound[0].y += contours[i].y;
             speedRects.push_back(speedLfound[0]);
-            
-            //speedRects.push_back(contours[i]);
         }
 	}
     return speedRects;
 }
 
-void LimitProcessor::resize(std::vector<cv::Rect> &contours, const float resizeFactor)
-{
-    for(int i=0; i<contours.size(); ++i)
-    {
-        contours[i].x = std::round(contours[i].x/resizeFactor);
-        contours[i].y = std::round(contours[i].y/resizeFactor);
-        contours[i].width = std::round(contours[i].width/resizeFactor);
-        contours[i].height = std::round(contours[i].height/resizeFactor);
-    }
-}
-
-cv::Mat LimitProcessor::approximateCircle(cv::Mat binaryMask, int dilation_elem = 0)
+cv::Mat LimitProcessor::approximateCircle(cv::Mat& binaryMask)
 {
     cv::cvtColor(binaryMask, binaryMask, cv::COLOR_BGR2GRAY);
-    int dilation_type = 0;
-    switch(dilation_elem)
-    {
-        case 0:
-            dilation_type = cv::MORPH_RECT; 
-        break;
-
-        case 1:
-            dilation_type = cv::MORPH_CROSS; 
-        break;
-
-        case 2:
-            dilation_type = cv::MORPH_ELLIPSE;
-        break;
-    }
-
-    int size = 1;
-    cv::Mat element = getStructuringElement(dilation_type, cv::Size(2 * size + 1, 2 * size + 1), cv::Point(size, size));
-    cv::morphologyEx(binaryMask, binaryMask, cv::MORPH_OPEN, element);
+    cv::morphologyEx(binaryMask, binaryMask, cv::MORPH_OPEN, element2);
     std::vector<cv::Point2f> points;
     for (int x = 0; x < binaryMask.cols; x++)
     {
@@ -311,58 +295,65 @@ cv::Mat LimitProcessor::approximateCircle(cv::Mat binaryMask, int dilation_elem 
     return binaryMask;
 }
 
-std::vector<cv::Mat> LimitProcessor::getTextImagesForOCR(const cv::Mat &image, std::vector<cv::Rect> &contours)
+std::vector<cv::Mat> LimitProcessor::getTextImagesForOCR(const cv::Mat& image, const cv::Mat1b& hueImage, std::vector<cv::Rect>& contours)
 {
     std::vector<cv::Mat> images(contours.size() );
-    cv::Mat1b redHue;
-    LimitProcessor::redColorSegmentation(image, redHue);
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1.5f, 1)); 
+    cv::Mat1b redHue = hueImage;
+
     for(int i=0; i<contours.size(); ++i)
     {
-        auto binaryMaskCrop = SaveThenLoad(redHue(contours[i]) );
-        auto originalCrop = SaveThenLoad(image(contours[i]) );
-        auto approxCircle = LimitProcessor::approximateCircle(binaryMaskCrop,2);
-
-        cv::Mat1b mask;
-        cv::inRange(approxCircle, cv::Scalar(255,0,0), cv::Scalar(255,0,0), mask );
-        auto CONTOURS = LimitProcessor::getRedContours(mask);
-        if(CONTOURS.empty() )
+        cv::Mat alpha;
+        std::vector<cv::Rect> CONTOURS;
         {
-            images.push_back(cv::Mat());
-            continue;
-        }
-        cv::floodFill(mask, cv::Point(0,0), cv::Scalar(255));
-        cv::erode(mask, mask, element);
-        mask = ~mask;
+            auto binaryMaskCrop = jovan::SaveThenLoad(redHue(contours[i]) );
+            auto approxCircle = LimitProcessor::approximateCircle(binaryMaskCrop);
 
-        auto alpha = SaveThenLoad(mask);
-        cv::Mat foreground =  SaveThenLoad(image(contours[i]));
+            cv::Mat1b mask;
+            cv::inRange(approxCircle, cv::Scalar(255,0,0), cv::Scalar(255,0,0), mask );
+            CONTOURS = LimitProcessor::getRedContours(mask);
+            if(CONTOURS.empty() )
+            {
+                images[i] = (cv::Mat());
+                continue;
+            }
+            cv::floodFill(mask, cv::Point(0,0), cv::Scalar(255));
+            cv::erode(mask, mask, element1);
+            mask = ~mask;
+
+            alpha = jovan::SaveThenLoad(mask);
+        }
+        cv::Mat foreground =  jovan::SaveThenLoad(image(contours[i]));
         cv::Mat background = cv::Mat(foreground.rows, foreground.cols, CV_8UC3, cv::Scalar(255,255,255) ); //white background
         
         foreground.convertTo(foreground, CV_32FC3);
         background.convertTo(background, CV_32FC3);
         alpha.convertTo(alpha, CV_32FC3, 1.0f/255);
         
-        cv::Mat ouImage = cv::Mat::zeros(foreground.size(), foreground.type());
-        cv::multiply(alpha, foreground, foreground); 
-        cv::multiply(cv::Scalar::all(1.0)-alpha, background, background); 
-        cv::add(foreground, background, ouImage);
+        cv::Mat FINAL;
+        {
+            cv::Mat ouImage = cv::Mat::zeros(foreground.size(), foreground.type());
+            cv::multiply(alpha, foreground, foreground); 
+            cv::multiply(cv::Scalar::all(1.0)-alpha, background, background); 
+            cv::add(foreground, background, ouImage);
 
-        cv::Mat FINAL = SaveThenLoad(ouImage);
+            FINAL = jovan::SaveThenLoad(ouImage);
+        }
         FINAL = FINAL(CONTOURS[0]);
         const float factor = 0.2f;
-        auto P1 = cv::Point(std::round(FINAL.cols*factor), std::round(FINAL.rows*factor));
-        auto P2 = cv::Point(std::round(FINAL.cols*(1-factor)), std::round(FINAL.rows*(1-factor)) );
-        FINAL = FINAL(cv::Rect(P1, P2));  
-
+        {
+            auto P1 = cv::Point(std::round(FINAL.cols*factor), std::round(FINAL.rows*factor));
+            auto P2 = cv::Point(std::round(FINAL.cols*(1-factor)), std::round(FINAL.rows*(1-factor)) );
+            FINAL = FINAL(cv::Rect(P1, P2));  
+        }
         images[i] = FINAL.clone();
     }
     return images;
 }
 
-std::vector<bool> LimitProcessor::getRecognizedLimits(const std::vector<cv::Mat> &images)
+std::vector<bool> LimitProcessor::getOCRdetection(const std::vector<cv::Mat>& images)
 {
     std::vector<bool> detection(images.size() );
+    std::cout << detection.size() << std::endl;
     int i=0;
     for(auto image : images)
     {
@@ -373,7 +364,7 @@ std::vector<bool> LimitProcessor::getRecognizedLimits(const std::vector<cv::Mat>
         }
         std::string word;
         m_OCR->run(image, word, NULL, NULL, NULL, cv::text::OCR_LEVEL_WORD);
-        std::cout << "word: " << word << std::endl;
+        std::cout << i << " word: " << word << std::endl;
 
         bool _80[2] = {false};
         int incr=0;
@@ -442,8 +433,8 @@ std::vector<cv::Rect> LimitProcessor::getSpeedLimitValues(const cv::Mat &image, 
 }
 */
 
-void LimitProcessor::drawLocations(cv::Mat &image, const std::vector<cv::Rect> &contours,
-    const cv::Scalar colorText = cv::Scalar(255,255,0), const cv::Scalar colorEdge = cv::Scalar(255,0,0), const std::string text = "SPEED LIMIT ")
+void LimitProcessor::drawLocations(cv::Mat& image, const std::vector<cv::Rect>& contours,
+    const cv::Scalar& colorText = cv::Scalar(255,255,0), const cv::Scalar& colorEdge = cv::Scalar(255,0,0), const std::string& text = "SPEED LIMIT ")
 {
     if(contours.empty() )
     {
@@ -471,7 +462,9 @@ LimitProcessor::LimitProcessor() : m_SpeedLimitDetected{false}//,
 {
     const std::string Path = SpeedLimitClassifier;
     LimitProcessor::loadCascade(&m_SpeedClassifier, 1, &Path);
-    m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "0123456789", 1, 6);
+    
+    this->m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "0123456789", 1, 6);
+
     //const std::string Paths[2] = {SpeedLimit40Classifier, SpeedLimit80Classifier};
     //LimitProcessor::loadCascade(m_LimitRecognizeClassifier, m_NumOfClassifiers, Paths);
 
@@ -485,34 +478,39 @@ LimitProcessor::LimitProcessor() : m_SpeedLimitDetected{false}//,
     */
 }
 
-#define Lilac cv::Scalar(255,0,255)
-void LimitProcessor::setFrame(const sensor_msgs::Image &Frame)
+LimitProcessor::~LimitProcessor() 
 {
-    m_Frame = cv_bridge::toCvCopy(Frame, "bgr8")->image.clone();
+    system("rm \"tmp.png\"");   //remove help png file
+}
+
+#define Lilac cv::Scalar(255,0,255)
+
+void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
+{
+    m_Frame = cv_bridge::toCvCopy(frame, "bgr8")->image.clone();
     auto helpImage = m_Frame.clone();
     const float resizeFactor = 0.6f;
     LimitProcessor::resize(helpImage, resizeFactor);
     
     if(m_ImageMask.empty() )
     {
-        LimitProcessor::createMask(helpImage);
+        LimitProcessor::createROImask(helpImage);
     }
-    auto imageROI = LimitProcessor::makeROI(helpImage);
+    auto imageROI = LimitProcessor::getROIframe(helpImage);
     //cv::imshow("ROI", imageROI);
     cv::Mat1b redHueImage;  //binary mask
-    LimitProcessor::redColorSegmentation(imageROI, redHueImage);
+    LimitProcessor::redColorSegmentationMask(imageROI, redHueImage);
     auto contours =  LimitProcessor::getRedContours(redHueImage);
-    LimitProcessor::preprocessContours(helpImage, contours);
-    contours = LimitProcessor::getDetectedSpeedLimitContours(helpImage, contours);
-
+    LimitProcessor::increaseRectsForClassification(helpImage, contours);
+    contours = LimitProcessor::getDetectedLimitContours(helpImage, contours);
     if(contours.size() )
     {
-        LimitProcessor::resize(contours, resizeFactor);
-        auto images = LimitProcessor::getTextImagesForOCR(m_Frame, contours);
-        auto detection = LimitProcessor::getRecognizedLimits(images);
+        auto redHueBig = redHueImage.clone();
+        LimitProcessor::resize(redHueBig, (1/resizeFactor) );
+        LimitProcessor::resize(contours, (1/resizeFactor) );
+        auto images = LimitProcessor::getTextImagesForOCR(m_Frame, redHueBig, contours);
+        auto detection = LimitProcessor::getOCRdetection(images);
     }
-    //contours = LimitProcessor::getSpeedLimitValues(helpImage, contours);
-    
     LimitProcessor::drawLocations(m_Frame, contours); //replaced Lilac with m_ColorMap[m_LimitValue]
 }
 

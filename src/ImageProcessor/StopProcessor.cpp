@@ -241,7 +241,7 @@ void StopProcessor::setCoordinates(const std::vector<bool> &detection, const std
 }
 
 void StopProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detection, const std::vector<cv::Rect> &contours,
-    const cv::Scalar colorEdge = cv::Scalar(0, 0, 255), const cv::Scalar colorText = cv::Scalar(255, 0, 255), const std::string text = "STOP")
+    const cv::Scalar &colorEdge = cv::Scalar(0, 0, 255), const cv::Scalar &colorText = cv::Scalar(255, 0, 255), const std::string &text = "STOP")
 {
     cv::Mat helpImage = image.clone();
 	for(unsigned int i=0; i<contours.size(); ++i)

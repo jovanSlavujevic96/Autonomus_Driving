@@ -10,7 +10,7 @@ public:
     explicit IDataSender() = default;
     virtual ~IDataSender() = default;
 
-    virtual void Publish(T1 _data) = 0;
+    virtual void Publish(T1& data) = 0;
     virtual Topics getTopic(void) const = 0;
 };
 

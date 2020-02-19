@@ -8,7 +8,7 @@
 template class DataSender<sensor_msgs::Image>;
 
 #include <std_msgs/Bool.h>
-template class DataSender<std_msgs::Bool>; 
+template class DataSender<std_msgs::Bool>;
 
 #include <bachelor/Coordinates.h>
 template class DataSender<bachelor::Coordinates>;
@@ -27,7 +27,7 @@ public:
     };
     virtual ~ImplDataSender() = default;
 
-    void Publish(T1 _data)
+    void Publish(T1 &_data)
     {
         Publisher.publish(_data);
     };
@@ -47,7 +47,7 @@ public:
     };
     virtual ~ImplDataSender() = default;
 
-    void Publish(sensor_msgs::Image _data)
+    void Publish(sensor_msgs::Image &_data)
     {
         Publisher.publish(_data);
     };
@@ -67,7 +67,7 @@ template <typename T1>
 DataSender<T1>::~DataSender() = default;
 
 template <typename T1>
-void DataSender<T1>::Publish(T1 _data)
+void DataSender<T1>::Publish(T1 &_data)
 {
     m_PimplDataSender->Publish(_data);
 }

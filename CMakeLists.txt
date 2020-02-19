@@ -89,7 +89,7 @@ add_library(_DataProtocolLib
 ############################################## CameraSimulator_Node
 
 add_library(_CameraSimulatorLib
-  src/CameraSimulator/CameraSimulator.cpp
+  src/CameraSimulator.cpp
 )
 
 add_executable(CameraSimulator_Node node/CameraSimulatorNode.cpp )
@@ -103,7 +103,8 @@ target_link_libraries(CameraSimulator_Node
 ############################################## Cluster of Detector Nodes
 
 add_library(_DetectorLib
-  src/Detector/Detector.cpp  #main class (observer class)
+  src/Detector.cpp  
+  src/DetectorNode.cpp
 )
 ####### Image Processor Lib #######
 
@@ -142,11 +143,25 @@ add_dependencies(StopDetector_Node
   ${${PROJECT_NAME}_gencpp} 
   ${catkin_EXPORTED_TARGETS}
 )
+######################## LimitDetector_Node
+add_executable(LimitDetector_Node node/detector_cluster/LimitDetectorNode.cpp ) 
 
+target_link_libraries(LimitDetector_Node 
+  _ImageProcessorLib
+  _DetectorLib
+  _DataProtocolLib
+  ${OpenCV_LIBS} 
+  ${catkin_LIBRARIES} 
+)
+
+add_dependencies(LimitDetector_Node 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}
+)
 ############################################## Watchdog_Node 
 
 add_library(_WatchdogLib
-  src/Watchdog/Watchdog.cpp
+  src/Watchdog.cpp
 )
 
 add_executable(Watchdog_Node node/WatchdogNode.cpp )
@@ -160,7 +175,7 @@ target_link_libraries(Watchdog_Node
 ############################################## Visualizer_Node
 
 add_library(_DisplayLib
-  src/Display/Display.cpp
+  src/Display.cpp
 )
 
 add_library(_VisualizerLib

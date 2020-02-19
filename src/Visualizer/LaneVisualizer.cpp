@@ -1,43 +1,42 @@
 #include <bachelor/Visualizer/LaneVisualizer.hpp>
 
 #define NumOfCoord 4
-
-//colors
 #define Red cv::Scalar(0,0,255)
-#define Yellow cv::Scalar(0, 255, 255)
-#define Lilac cv::Scalar(255,0,255)
 
 LaneVisualizer::LaneVisualizer() : m_Lines{std::vector<std::vector<cv::Point>>(NumOfCoord)}
 {
-    this->m_LineColor = Yellow;
-    this->m_TextColor = Yellow;
+    this->m_LineColor = cv::Scalar(0, 255, 255); //Yellow
+    this->m_TextColor = cv::Scalar(0, 255, 255);
+    this->m_CoordinatesReceived = false;
 }
 
-void LaneVisualizer::setCoordinates(const bachelor::Coordinates &coordinates) 
+void LaneVisualizer::update(const bachelor::Coordinates &_msg, Topics _subjTopic)
 {
+    m_CoordinatesReceived = true;
     for(int i=0; i<NumOfCoord; ++i)
     {
         std::vector<cv::Point> pts(2);
-        pts[0] = cv::Point(coordinates.X1[i], coordinates.Y1[i]);
-        pts[1] = cv::Point(coordinates.X2_Width[i], coordinates.Y2_Height[i]);
+        pts[0] = cv::Point(_msg.X1[i], _msg.Y1[i]);
+        pts[1] = cv::Point(_msg.X2_Width[i], _msg.Y2_Height[i]);
         m_Lines[i] = pts;
     }
 }
 
-void LaneVisualizer::setColor(const cv::Scalar &color)
+bool LaneVisualizer::doStuff(void)
 {
-    m_LineColor = color;
+    //not in use
+    return true;
 }
 
-void LaneVisualizer::setText(const std::string text, const cv::Scalar &color)
+void LaneVisualizer::draw(cv::Mat &frame)
 {
-    m_Direction = text;
-    m_TextColor = color;
-}
+    if(frame.empty() || !m_CoordinatesReceived)
+    {
+        return;
+    }
 
-void LaneVisualizer::drawMe(cv::Mat &frame)
-{
     bool rightLine=false, leftLine=false;
+    
     //if there are lines draw them
     if( (m_Lines[0][0] != cv::Point(0,0)) && (m_Lines[0][1] != cv::Point(0,0)) )    //if both dots are zeros, there are no line
     {
@@ -52,7 +51,7 @@ void LaneVisualizer::drawMe(cv::Mat &frame)
     if(rightLine && leftLine)
     {
         cv::line(frame, m_Lines[2][0], m_Lines[2][1], m_LineColor, 3, CV_AA); //measuredDot (Line)
-        cv::line(frame, m_Lines[3][0], m_Lines[3][1], Red, 3, CV_AA); //referent Dot (line)
+        cv::line(frame, m_Lines[3][0], m_Lines[3][1], Red, 3, CV_AA); //referent Dot (line) //red color
 
         cv::Mat tmp = frame.clone();
         std::vector<cv::Point> poly_points(4);
@@ -67,5 +66,5 @@ void LaneVisualizer::drawMe(cv::Mat &frame)
 
 VisualizerType LaneVisualizer::getVisualizerType(void)
 {
-    return Lane;
+    return LaneVizType;
 }

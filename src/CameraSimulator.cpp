@@ -1,4 +1,4 @@
-#include <bachelor/CameraSimulator/CameraSimulator.hpp>
+#include <bachelor/CameraSimulator.hpp>
 #include <bachelor/DataSender/DataSender.hpp>
 #include <cv_bridge/cv_bridge.h>
 

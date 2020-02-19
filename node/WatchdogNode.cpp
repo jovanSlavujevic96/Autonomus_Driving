@@ -1,4 +1,4 @@
-#include <bachelor/Watchdog/Watchdog.hpp>
+#include <bachelor/Watchdog.hpp>
 #include <bachelor/DataReceiver/DataReceiver.hpp>
 
 #include <memory>

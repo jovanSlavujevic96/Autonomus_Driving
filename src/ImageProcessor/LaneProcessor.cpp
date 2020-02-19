@@ -202,75 +202,37 @@ void LaneProcessor::CalculateCoordinates(std::vector<cv::Point> &lanePts, const 
         lanePts[i].y = std::round(lanePts[i].y/resizeFactor);
     }
     //first push right line
-    std::vector<int> coordinateSet;
     if(m_RightFlag) 
     {
-        int rightLine[4] = { lanePts[0].x, lanePts[0].y, lanePts[1].x, lanePts[1].y };
-        for(int i=0; i<4; ++i)
-        {
-            coordinateSet.push_back(rightLine[i]);
-        }
-        m_Coordinates.push_back(coordinateSet);
+        m_Coordinates.push_back({lanePts[0].x, lanePts[0].y, lanePts[1].x, lanePts[1].y });
     }
     else
     {
-        for(int i=0; i<4; ++i)
-        {
-            coordinateSet.push_back(0);
-        }
-        m_Coordinates.push_back(coordinateSet);
+        m_Coordinates.push_back({0,0,0,0});
     }
-    coordinateSet.clear();
     //second push left line
     if(m_LeftFlag)  
     {
-        int leftLine[4] = {lanePts[2].x, lanePts[2].y, lanePts[3].x, lanePts[3].y};
-        for(int i=0; i<4; ++i)
-        {
-            coordinateSet.push_back(leftLine[i]);
-        }
-        m_Coordinates.push_back(coordinateSet);
+        m_Coordinates.push_back({lanePts[2].x, lanePts[2].y, lanePts[3].x, lanePts[3].y});
     }
     else
     {
-        for(int i=0; i<4; ++i)
-        {
-            coordinateSet.push_back(0);
-        }
-        m_Coordinates.push_back(coordinateSet);
+        m_Coordinates.push_back({0,0,0,0});
     }
-    coordinateSet.clear();
     //then push measured and ref dot like lines
     if(m_LeftFlag && m_RightFlag) 
-    {
-        
-        int measuredDot_Line[4] = {(int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y+30)/resizeFactor), 
-            (int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y-30)/resizeFactor)};
-        for(int i=0; i<4; ++i)
-        { 
-            coordinateSet.push_back(measuredDot_Line[i]);
-        }
-        m_Coordinates.push_back(coordinateSet);
-        coordinateSet.clear();
-        int refDot_line[4] = {(int)std::round(m_RefDot.x/resizeFactor), (int)std::round((m_RefDot.y+15)/resizeFactor), 
-            (int)std::round(m_RefDot.x/resizeFactor), (int)std::round((m_RefDot.y-15)/resizeFactor) };
-        for(int i=0; i<4; ++i)
-        { 
-            coordinateSet.push_back(refDot_line[i]);
-        }
-        m_Coordinates.push_back(coordinateSet);
+    {   
+        m_Coordinates.push_back({(int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y+30)/resizeFactor), 
+            (int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y-30)/resizeFactor)});
+
+        m_Coordinates.push_back({(int)std::round(m_RefDot.x/resizeFactor), (int)std::round((m_RefDot.y+15)/resizeFactor), 
+            (int)std::round(m_RefDot.x/resizeFactor), (int)std::round((m_RefDot.y-15)/resizeFactor) });
     }
     else
     {
-        for(int i=0; i<4; ++i)
-        {
-            coordinateSet.push_back(0);
-        }
-        m_Coordinates.push_back(coordinateSet);
-        m_Coordinates.push_back(coordinateSet);
+        m_Coordinates.push_back({0,0,0,0});
+        m_Coordinates.push_back({0,0,0,0});
     }
-    
-
 }
 
 void LaneProcessor::plotLane(cv::Mat &image, const std::vector<cv::Point> &lanePts, const float resizeFactor)
@@ -291,11 +253,11 @@ void LaneProcessor::plotLane(cv::Mat &image, const std::vector<cv::Point> &laneP
             cv::Point( std::round(m_RefDot.x/resizeFactor), std::round((m_RefDot.y-15)/resizeFactor) ), cv::Scalar(0, 0, 255), 3, CV_AA); //referent Dot (line)
 
         cv::Mat tmp = image.clone();
-        std::vector<cv::Point> poly_points;
-        poly_points.push_back(lanePts[2]);
-        poly_points.push_back(lanePts[0]);
-        poly_points.push_back(lanePts[1]);
-        poly_points.push_back(lanePts[3]);
+        std::vector<cv::Point> poly_points(4);
+        poly_points[0]=(lanePts[2]);
+        poly_points[1]=(lanePts[0]);
+        poly_points[2]=(lanePts[1]);
+        poly_points[3]=(lanePts[3]);
         cv::fillConvexPoly(tmp, poly_points, cv::Scalar(0, 0, 255), CV_AA, 0);
         cv::addWeighted(tmp, 0.3f, image, 1.0f - 0.3f, 0, image);
     }
@@ -304,7 +266,9 @@ void LaneProcessor::plotLane(cv::Mat &image, const std::vector<cv::Point> &laneP
         cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);  //print advised direction of driving 
 }
 
-LaneProcessor::LaneProcessor() : m_LeftFlag{false}, m_RightFlag{false}
+LaneProcessor::LaneProcessor() : 
+    m_LeftFlag{false}, m_RightFlag{false}
+    //m_Coordinates{std::vector<std::vector<int>>(4)}
 {   
     //for specific  video
     m_RefDot = cv::Point(539, 445); 

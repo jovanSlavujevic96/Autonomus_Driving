@@ -1,5 +1,5 @@
-#ifndef BACHELOR_TOPICS_H
-#define BACHELOR_TOPICS_H
+#ifndef BACHELOR_TOPICS_H_
+#define BACHELOR_TOPICS_H_
 
 #include <string>
 
@@ -17,4 +17,4 @@ const std::string TopicName[NumOfTopics] =
     "/pause/play",  "/raw_frame",      "/Coord/LANE_DET",   "/Coord/STOP_DET",   "/Coord/LIM_DET"
 };
 
-#endif //BACHELOR_TOPICS_H
+#endif //BACHELOR_TOPICS_H_

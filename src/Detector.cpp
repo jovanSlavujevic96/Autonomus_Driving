@@ -1,4 +1,4 @@
-#include <bachelor/Detector/Detector.hpp>
+#include <bachelor/Detector.hpp>
 #include <bachelor/DataSender/DataSender.hpp>
 
 #include <iostream>
