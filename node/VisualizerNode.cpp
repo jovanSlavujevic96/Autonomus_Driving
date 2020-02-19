@@ -1,8 +1,12 @@
 #include <ros/ros.h>
 #include <string>
+#include <map>
 
-#include <bachelor/Visualizer/Visualizer.hpp>
+#include <bachelor/Display/Display.hpp>
 #include <bachelor/DataReceiver/DataReceiver.hpp>
+
+#include <bachelor/Visualizer/LaneVisualizer.hpp>
+#include <bachelor/Visualizer/ObjectVisualizer.hpp>
 
 int main(int argc, char **argv)
 {
@@ -17,17 +21,26 @@ int main(int argc, char **argv)
             }
         }
     }
+    std::map<bool*, std::unique_ptr<IVisualizer>> chooseVisualization;
+    chooseVisualization[&draw[0]] = std::make_unique<LaneVisualizer>();
+    chooseVisualization[&draw[1]] = std::make_unique<ObjectVisualizer>(Limit);
+    chooseVisualization[&draw[2]] = std::make_unique<ObjectVisualizer>(Stop);
+    
+    const std::string nodeName = "Visualizer_Node";
+    ros::init(argc, argv, nodeName);
+
+    Display observer;
     {
         const std::string names[3] = {"lanes", "stop rects", "limit rects"};
         for(int i=0; i<3; ++i)
         {
             std::cout << "draw "<< names[i] << ": " << std::boolalpha << draw[i] << std::endl;
+            if(draw[i])
+            {
+                observer.addVisualizer(chooseVisualization[&draw[i]].get() );
+            }
         }
     }
-    const std::string nodeName = "Visualizer_Node";
-    ros::init(argc, argv, nodeName);
-
-    Visualizer observer(draw[0], draw[1], draw[2]);
 
     std::unique_ptr<IDataReceiver<bachelor::Coordinates>> coordinatesRcv[3];
     const Topics topics[3] = {Coord_LaneDet, Coord_StopDet, Coord_LimDet};
@@ -40,7 +53,6 @@ int main(int argc, char **argv)
     framesRcv = std::make_unique<DataReceiver<sensor_msgs::Image>>(RawFrame);
     framesRcv->registerObserver(&observer);
     
-
     std::cout << nodeName << " successfully initialized." << std::endl; 
 
     while(ros::ok() )

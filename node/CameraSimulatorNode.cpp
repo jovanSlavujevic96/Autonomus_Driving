@@ -29,6 +29,12 @@ int main(int argc, char **argv)
 		std::cout << "Exit " << nodeName << std::endl;
 		return -1;
 	}
+	else
+	{
+		std::cout << "Playing video: " << videoName << std::endl;
+		std::cout << "Playing fps: " << fps << std::endl;
+	}
+	
 	ros::init(argc, argv, nodeName);
 
 	std::unique_ptr<CameraSimulator> PlayerObserver = std::make_unique<CameraSimulator>();

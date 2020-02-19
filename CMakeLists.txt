@@ -159,14 +159,20 @@ target_link_libraries(Watchdog_Node
 
 ############################################## Visualizer_Node
 
+add_library(_DisplayLib
+  src/Display/Display.cpp
+)
+
 add_library(_VisualizerLib
-  src/Visualizer/Visualizer.cpp
+  src/Visualizer/LaneVisualizer.cpp
+  src/Visualizer/ObjectVisualizer.cpp
 )
 
 add_executable(Visualizer_Node node/VisualizerNode.cpp ) 
 
 target_link_libraries(Visualizer_Node 
   _VisualizerLib
+  _DisplayLib
   _DataProtocolLib
   ${OpenCV_LIBS}
   ${catkin_LIBRARIES}
