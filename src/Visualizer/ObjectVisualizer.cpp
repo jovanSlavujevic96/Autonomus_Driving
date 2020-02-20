@@ -1,12 +1,19 @@
 #include <bachelor/Visualizer/ObjectVisualizer.hpp>
 
-ObjectVisualizer::ObjectVisualizer(VisualizerType type) : m_VisualizerType{type}
+ObjectVisualizer::ObjectVisualizer(VisualizerType type) : 
+    m_VisualizerType{type}
 {
     if(type == StopVizType)
     {
         this->m_SignName = "STOP";
         this->m_TextColor = cv::Scalar(0,0,255); //Red;
         this->m_RectColor = cv::Scalar(255,0,255); //Lilac;
+    }
+    else if(type == LimitVizType)
+    {
+        this->m_SignName = "LIMIT";
+        this->m_TextColor = cv::Scalar(255,255,0); //Blue;
+        this->m_RectColor = cv::Scalar(255,0,0); //Lilac;
     }
 }
 
@@ -16,12 +23,15 @@ bool ObjectVisualizer::doStuff(void)
     return true;
 }
 
-void ObjectVisualizer::update(const bachelor::Coordinates &_msg, Topics _subjTopic)
+void ObjectVisualizer::update(const bachelor::Coordinates& _msg, Topics _subjTopic)
 {
     for(int i=0; i<4; ++i)
     {
         m_Rects.push_back(cv::Rect(_msg.X1[i], _msg.Y1[i], _msg.X2_Width[i], _msg.Y2_Height[i]) );
+        //std::cout << _msg.X1[i] << ' ' << _msg.Y1[i] << ' ' << _msg.X2_Width[i] << ' ' << _msg.Y2_Height[i] << std::endl;
+        //std::cout << m_Rects[i].x << ' ' << m_Rects[i].y << ' ' << m_Rects[i].width << ' ' << m_Rects[i].height << std::endl;
     }
+    //std::cout << std::endl;//
 }
 
 void ObjectVisualizer::draw(cv::Mat &frame)
@@ -33,13 +43,14 @@ void ObjectVisualizer::draw(cv::Mat &frame)
         {
             if(i==0)
             {
+                m_Rects.clear();    //reset vector
                 return;    //there are no rects and that's ok
             }
             size = i;
             break;
         }    
     }
-
+    
     auto helpImage = frame.clone();
 	for(int i=0; i<size; ++i)
     {

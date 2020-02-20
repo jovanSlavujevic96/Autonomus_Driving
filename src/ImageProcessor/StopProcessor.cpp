@@ -214,29 +214,19 @@ void StopProcessor::setDetection(const std::vector<bool> &detection, const std::
     m_StopDetected = true;
 }
 
-void StopProcessor::setCoordinates(const std::vector<bool> &detection, const std::vector<cv::Rect> &contours)
+void StopProcessor::setCoordinates(const std::vector<bool>& detection, const std::vector<cv::Rect>& contours)
 {
-    std::vector<int> coordinateSet;
     for(int i=0; i<contours.size(); ++i)
     {
         if(detection[i])
         {
-            coordinateSet.push_back(contours[i].x);
-            coordinateSet.push_back(contours[i].y);
-            coordinateSet.push_back(contours[i].width);
-            coordinateSet.push_back(contours[i].height);
-            m_Coordinates.push_back(coordinateSet);
-            coordinateSet.clear();
+            m_Coordinates.push_back({contours[i].x, contours[i].y, contours[i].width, contours[i].height });
         }
-    }
-    for(int i=0; i<4; ++i)
-    {
-        coordinateSet.push_back(0);
     }
     const int loop = (4-m_Coordinates.size());
     for(int i=0; i<loop; ++i)
     {
-        m_Coordinates.push_back(coordinateSet);
+        m_Coordinates.push_back({0,0,0,0});
     }
 }
 
@@ -268,7 +258,7 @@ StopProcessor::StopProcessor() : m_StopDetected{false}
 {
     const std::string Path = StopClassifierPath;
     StopProcessor::loadCascade(&m_StopClassifier, 1, &Path);
-    m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "STOP", 1, 6);
+    this->m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "STOP", 1, 6);
 }
 
 void StopProcessor::setFrame(const sensor_msgs::Image &Frame)

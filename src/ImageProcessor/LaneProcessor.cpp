@@ -1,19 +1,19 @@
 #include <bachelor/ImageProcessor/LaneProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
-void LaneProcessor::resize(cv::Mat &image, const float resizeFactor)
+void LaneProcessor::resize(cv::Mat& image, const float resizeFactor)
 {
     cv::resize(image, image, cv::Size( std::round(image.size().width*resizeFactor), std::round(image.size().height*resizeFactor) ) ); 
 }
 
-cv::Mat LaneProcessor::deNoise(const cv::Mat &image) const
+cv::Mat LaneProcessor::deNoise(const cv::Mat& image) const
 {
     cv::Mat deNoised;
     cv::GaussianBlur(image, deNoised, cv::Size(3, 3), 0, 0);
     return deNoised;    
 }
 
-cv::Mat LaneProcessor::edges(const cv::Mat &image) const
+cv::Mat LaneProcessor::edges(const cv::Mat& image) const
 {
     cv::Mat gray, blur, canny;
     cv::cvtColor(image, gray, CV_RGB2GRAY);
@@ -22,15 +22,15 @@ cv::Mat LaneProcessor::edges(const cv::Mat &image) const
     return canny;
 }
 
-void LaneProcessor::createMask(const cv::Mat &image)
+void LaneProcessor::createMask(const cv::Mat& image)
 {
     cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
 
     //for specific video
-    const int x0 = 310, y0 = 555;
-    const int x1 = 845, y1 = y0;
-    const int x2 = 595, y2 = 445;
-    const int x3 = 485, y3 = y2;
+    const int x0 = 295, y0 = 555;
+    const int x1 = 890, y1 = y0;
+    const int x2 = 610, y2 = 445;
+    const int x3 = 470, y3 = y2;
   
     cv::Point pts[4] = 
     {
@@ -45,7 +45,7 @@ void LaneProcessor::createMask(const cv::Mat &image)
     m_FrameMask = mask.clone(); //return
 }
 
-cv::Mat LaneProcessor::getROI(const cv::Mat &image) const
+cv::Mat LaneProcessor::getROI(const cv::Mat& image) const
 {
     cv::Mat output;
     // Multiply the edges image and the mask to get the output
@@ -53,7 +53,7 @@ cv::Mat LaneProcessor::getROI(const cv::Mat &image) const
     return output;
 }
 
-std::vector<cv::Vec4i> LaneProcessor::houghLines(const cv::Mat &image) const
+std::vector<cv::Vec4i> LaneProcessor::houghLines(const cv::Mat& image) const
 {
     std::vector<cv::Vec4i> lines;
     // rho and theta are selected by trial and error
@@ -61,7 +61,7 @@ std::vector<cv::Vec4i> LaneProcessor::houghLines(const cv::Mat &image) const
     return lines;
 }
 
-std::vector<std::vector<cv::Vec4i>> LaneProcessor::lineSeparation(const cv::Mat &image, const std::vector<cv::Vec4i> &lines)
+std::vector<std::vector<cv::Vec4i>> LaneProcessor::lineSeparation(const cv::Mat& image, const std::vector<cv::Vec4i>& lines)
 {
     std::vector<std::vector<cv::Vec4i> > output(2);
     
@@ -118,7 +118,7 @@ std::vector<std::vector<cv::Vec4i>> LaneProcessor::lineSeparation(const cv::Mat 
     return output;
 }
 
-std::vector<cv::Point> LaneProcessor::regression(const cv::Mat &image, const std::vector<std::vector<cv::Vec4i>> &lines)
+std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std::vector<std::vector<cv::Vec4i>>& lines)
 {
     std::vector<cv::Point> output(4);
     cv::Point ini, fini, ini2, fini2;
@@ -193,7 +193,7 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat &image, const std
     return output;
 }
 
-void LaneProcessor::CalculateCoordinates(std::vector<cv::Point> &lanePts, const float resizeFactor)
+void LaneProcessor::CalculateCoordinates(std::vector<cv::Point>& lanePts, const float resizeFactor)
 {
     //resize lines
     for(int i=0; i<lanePts.size(); ++i)
@@ -235,7 +235,7 @@ void LaneProcessor::CalculateCoordinates(std::vector<cv::Point> &lanePts, const 
     }
 }
 
-void LaneProcessor::plotLane(cv::Mat &image, const std::vector<cv::Point> &lanePts, const float resizeFactor)
+void LaneProcessor::plotLane(cv::Mat& image, const std::vector<cv::Point>& lanePts, const float resizeFactor)
 {
     if(m_RightFlag)
     {
@@ -274,14 +274,14 @@ LaneProcessor::LaneProcessor() :
     m_RefDot = cv::Point(539, 445); 
 }
 
-void LaneProcessor::setFrame(const sensor_msgs::Image &Frame)
+void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
 {
     m_RightFlag = false;
     m_LeftFlag = false;
     m_MeasuredDot = cv::Point(); //reset all important variables
     m_Coordinates.clear();
     
-    m_Frame = cv_bridge::toCvCopy(Frame, "bgr8")->image.clone();
+    m_Frame = cv_bridge::toCvCopy(frame, "bgr8")->image.clone();
     auto helpImage = m_Frame.clone();
     const float percentage = 0.6f;
     LaneProcessor::resize(helpImage, percentage);

@@ -7,21 +7,27 @@
 #define play 1
 #define pause 0
 
-int main(void)
+int main(int argc, char **argv)
 {
+    std::string VideoPath = "/home/rtrk/Videos/testVideos/LimitTest3.mp4";
+    if(argc >= 2)
+    {
+        VideoPath = std::string("/home/rtrk/Videos/testVideos/") + std::string(argv[1]);
+    }
+
     /*
     LaneProcessor lane;
-    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest2.mp4");
+    cv::VideoCapture cap(VideoPath);
     //*/
 
     ///*
     LimitProcessor speed;
-    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/LimitTest3.mp4");
+    cv::VideoCapture cap(VideoPath);
     //*/
 
     /*
     StopProcessor stop;
-    cv::VideoCapture cap("/home/rtrk/Videos/testVideos/drivingSchool.mp4");
+    cv::VideoCapture cap(VideoPath);
     //*/
 
     if(!cap.isOpened() ) 
