@@ -1,20 +1,19 @@
 #ifndef BACHELOR_VISUALIZER_IVISUALIZER_HPP_
 #define BACHELOR_VISUALIZER_IVISUALIZER_HPP_
 
+#include <bachelor/Frame.h>
+
 enum VisualizerType{LaneVizType, StopVizType, LimitVizType};
 
-#include <bachelor/Coordinates.h>
-#include <bachelor/IObserver.hpp>
 
-#include <opencv2/opencv.hpp>
-
-class IVisualizer : public IObserver<bachelor::Coordinates>
+class IVisualizer
 {
 public:
     explicit IVisualizer() = default;
     virtual ~IVisualizer() = default;
 
-    virtual void draw(cv::Mat& frame) = 0;
+    
+    virtual void draw(Frame* frame) = 0;
     virtual VisualizerType getVisualizerType(void) = 0;
 };
 

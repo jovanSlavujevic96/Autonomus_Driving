@@ -11,8 +11,10 @@
 #include <image_transport/image_transport.h>
 #include <std_msgs/Bool.h>
 #include <bachelor/Coordinates.h>
+#include <std_msgs/String.h>
 
-class Detector : public IObserver<sensor_msgs::Image>
+class Detector : 
+	public IObserver<sensor_msgs::Image>
 {
 private:
 	std::unique_ptr<IDataSender<std_msgs::Bool>> m_DataEmiterWatchdog;
@@ -20,7 +22,7 @@ private:
 	std::unique_ptr<IImageProcessor> m_ImgProc;
 
 public:
-	Detector(std::unique_ptr<IImageProcessor> procType, Topics ImHereTopic, Topics CoordTopic);
+	Detector(std::unique_ptr<IImageProcessor> procType);
 	virtual ~Detector() = default;
 	
 	void update(const sensor_msgs::Image& msg, Topics subjTopic) override;	//observer method

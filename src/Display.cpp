@@ -1,11 +1,33 @@
 #include <bachelor/Display.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <bachelor/DataSender/DataSender.hpp>
-#include <numeric>
+#include <bachelor/Frame.h>
 
 #define Red cv::Scalar(0,0,255)
 #define Yellow cv::Scalar(0, 255, 255)
 #define Lilac cv::Scalar(255,0,255)
+
+bool Display::calculateRecievement(void)
+{
+    for(auto topic : m_TopicsInUse)
+    {
+        if(!m_Recievement[topic])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Display::resetVariables(void)
+{
+    for(auto topic : m_TopicsInUse)
+    {
+        m_Points[topic].clear();
+        m_Recievement[topic] = false;
+    }
+    m_FrameRecevied = false;
+}
 
 bool Display::pauseCheck(void)
 {
@@ -35,9 +57,19 @@ Display::Display() :
     this->m_FrameRecevied = false;
 }
 
-void Display::addVisualizer(IVisualizer* _visualizer)
+void Display::addVisualizer(IVisualizer* visualizer, Topics subjTopic)
 {
-    m_Visualizers.push_back(_visualizer);
+    for(auto topics : m_TopicsInUse)
+    {
+        if(topics == subjTopic)
+        {
+            std::cout << "You cannot add this Visualizer. Visualizer is already in use!\n";
+            return;
+        }
+    }
+    m_Visualizers[subjTopic] = visualizer;
+    m_Recievement[subjTopic] = false;   //waits to become true
+    m_TopicsInUse.push_back(subjTopic);   
 }
 
 bool Display::doStuff(void) 
@@ -48,8 +80,20 @@ bool Display::doStuff(void)
         msg.data = true;
         m_ToWatchdog->Publish(msg);
     }
-    if(m_FrameRecevied)
+    if(m_FrameRecevied && Display::calculateRecievement() )
     {
+        Frame frame;
+        frame.MatFrame = &m_Frame;
+        
+        for(auto topic : m_TopicsInUse)
+        {
+            for(int i=0; i<m_Points[topic].size(); ++i)
+            {
+                frame.Dots.push_back({m_Points[topic][i*2], m_Points[topic][(i*2)+1] });
+            }
+            m_Visualizers[topic]->draw(&frame);
+            frame.Dots.clear();
+        }
         try
         { 
             cv::imshow("Visualization: ", m_Frame);
@@ -58,6 +102,7 @@ bool Display::doStuff(void)
         {
             return false;
         }
+        Display::resetVariables();
     }
     if(!Display::pauseCheck() )	//if exit button (<esc> or 'q') is pressed exit the program
 	{
@@ -66,12 +111,22 @@ bool Display::doStuff(void)
     return true;
 }
 
-void Display::update(const sensor_msgs::Image &_msg, Topics _subjTopic) 
+void Display::update(const sensor_msgs::Image& msg, Topics subjTopic) 
 {
-    m_FrameRecevied = true;
-    m_Frame = cv_bridge::toCvCopy(_msg, "bgr8")->image.clone();
-    for(int i=0; i<m_Visualizers.size(); ++i)
+    if(!m_FrameRecevied)
     {
-        m_Visualizers[i]->draw(m_Frame);
+        m_FrameRecevied = true;
+        m_Frame = cv_bridge::toCvCopy(msg, "bgr8")->image.clone();
+    }
+}
+
+void Display::update(const bachelor::Coordinates& msg, Topics subjTopic)
+{
+    m_Recievement[subjTopic] = true;
+    for(int i=0; i<msg.size; ++i)
+    {
+        m_Points[subjTopic].push_back(cv::Point(msg.X1[i], msg.Y1[i]) );
+        m_Points[subjTopic].push_back(cv::Point(msg.X2[i], msg.Y2[i]) );
+        //std::cout << msg.X1 << ' ' << msg.Y1 << ' ' << msg.X2 << ' ' << msg.Y2 << std::endl;
     }
 }

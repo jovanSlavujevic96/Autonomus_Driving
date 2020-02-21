@@ -13,38 +13,42 @@ template class DataReceiver<std_msgs::Bool>;
 #include <bachelor/Coordinates.h>
 template class DataReceiver<bachelor::Coordinates>;
 
+#include <std_msgs/String.h>
+template class DataReceiver<std_msgs::String>;
+
 //default
 template <typename T1>
 class DataReceiver<T1>::ImplDataReceiver
 {
     ros::Subscriber Subscriber;
     Topics TopicTo;
-    std::vector<IObserver<T1> *> Observers;
+    std::vector<IObserver<T1>* > Observers;
 
-    void Callback(const T1 &_Msg)
+    void Callback(const T1& msg)
     {
-        notifyObservers(_Msg);
+        notifyObservers(msg);
     };
-    void notifyObservers(T1 _data)
+    void notifyObservers(T1 data)
     {
-        for (IObserver<T1> *observer : Observers)  // notify all observers
+        for (IObserver<T1>* observer : Observers)  // notify all observers
         {
-            observer->update(_data, TopicTo);
+            observer->update(data, TopicTo);
         }
     };
 public:
-    ImplDataReceiver(const Topics _topicName) : TopicTo{_topicName}
+    ImplDataReceiver(const Topics topicName) : 
+        TopicTo{topicName}
     {
         ros::NodeHandle node;
-        Subscriber = node.subscribe(TopicName[_topicName], 1, &DataReceiver<T1>::ImplDataReceiver::Callback, this);    
+        Subscriber = node.subscribe(TopicName[topicName], 4, &DataReceiver<T1>::ImplDataReceiver::Callback, this);    
     };
 	~ImplDataReceiver() = default;
 
-    void registerObserver(IObserver<T1> *observer)
+    void registerObserver(IObserver<T1>* observer)
     {
         Observers.push_back(observer);
     };
-	void removeObserver(IObserver<T1> *observer)
+	void removeObserver(IObserver<T1>* observer)
     {
         auto iterator = std::find(Observers.begin(), Observers.end(), observer);
         if (iterator != Observers.end()) // observer found
@@ -109,8 +113,8 @@ public:
 
 //main class impl
 template <typename T1>
-DataReceiver<T1>::DataReceiver(const Topics _topicName) :
-    m_PimplDataReceiver{std::make_unique<DataReceiver<T1>::ImplDataReceiver>(_topicName) }
+DataReceiver<T1>::DataReceiver(const Topics topicName) :
+    m_PimplDataReceiver{std::make_unique<DataReceiver<T1>::ImplDataReceiver>(topicName) }
 {
 
 }

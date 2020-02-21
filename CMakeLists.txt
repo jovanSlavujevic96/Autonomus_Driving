@@ -198,6 +198,26 @@ add_dependencies(Visualizer_Node
   ${catkin_EXPORTED_TARGETS}
 )
 
+################################################# ECU_Node
+
+add_library(_ECULib
+  src/ECU.cpp
+)
+
+add_executable(ECU_Node node/ECUNode.cpp ) 
+
+target_link_libraries(ECU_Node 
+  _DataProtocolLib
+  _ECULib
+  ${OpenCV_LIBS}
+  ${catkin_LIBRARIES}
+)
+
+add_dependencies(ECU_Node 
+  ${${PROJECT_NAME}_gencpp} 
+  ${catkin_EXPORTED_TARGETS}
+)
+
 #################################################
 
 add_executable(detTest test_node/detectionTest.cpp ) 

@@ -27,9 +27,8 @@ int main(int argc, char **argv)
     std::cout << nodeName << " successfully initialized." << std::endl; 
 
     ros::Rate loop_rate(loopRate);
-    while(ros::ok() )
+    while(ros::ok() && wdog->doStuff() )
     {
-        wdog->doStuff();
         ros::spinOnce();
         loop_rate.sleep();
     }

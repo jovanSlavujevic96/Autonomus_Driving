@@ -1,4 +1,5 @@
-int64[4] X1
-int64[4] Y1
-int64[4] X2_Width
-int64[4] Y2_Height
+uint64[] X1
+uint64[] Y1
+uint64[] X2
+uint64[] Y2
+uint8 size

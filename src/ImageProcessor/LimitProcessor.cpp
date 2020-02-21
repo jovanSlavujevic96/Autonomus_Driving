@@ -61,10 +61,7 @@ void LimitProcessor::loadCascade(cv::CascadeClassifier* cascade, const int size,
             std::cout << "Error while loading cascade from path: " << path[i] << std::endl;
             std::exit(-1);
         }
-        else
-        {
-            std::cout << "Successfully loaded classifier from path: " << path[i] << std::endl;
-        }
+        std::cout << "Successfully loaded classifier from path: " << path[i] << std::endl;
     }
 }
 
@@ -338,22 +335,27 @@ void LimitProcessor::changeString(std::string& string)
 {
     for(int j=0; j<string.size(); ++j)
     {
-        if(string[j] == 'B')
-        {
-            string[j] = '8';
-        }
-        else if(string[j] == 'O' || string[j] == 'o' || string[j] == 'u' || string[j] == 'U')
+        if(string[j] == 'O' || string[j] == 'o' || string[j] == 'u' || string[j] == 'U')
         {
             string[j] = '0';
         }
-        else if(string[j] == 'S' || string[j] == 's')
+        
+        if(string[j+1] == 'O' || string[j+1] == 'o' || string[j+1] == 'u' || string[j+1] == 'U' || string[j+1] == '0' )
         {
-            string[j] = '5';
+            if(string[j] == 'B')
+            {
+                string[j] = '8';
+            }
+            else if(string[j] == 'S' || string[j] == 's' || string[j] == 'c' || string[j] == 'C')
+            {
+                string[j] = '5';
+            }
+            else if(string[j] == 'A')
+            {
+                string[j] = '4';
+            }
         }
-        else if(string[j] == 'A')
-        {
-            string[j] = '4';
-        }
+        
     }
     for(int i=0; i<string.size(); ++i)
     {
@@ -419,7 +421,7 @@ std::vector<int> LimitProcessor::getOCR(std::vector<cv::Mat>& images, std::vecto
             continue;
         }
         m_OCR->run(images[i], readen, NULL, NULL, NULL, cv::text::OCR_LEVEL_WORD);
-        if(readen.size() > 5)
+        if(readen.size() <= 2 || readen.size() > 5)
         {
             contours.erase(contours.begin()+i);
             continue;
@@ -464,20 +466,16 @@ int LimitProcessor::getMode(const std::vector<int>& value)
 
 void LimitProcessor::setCoordinates(const std::vector<cv::Rect>& contours)
 {
-    for(int i=0; i<contours.size(); ++i)
-    {
-        //std::cout << contours[i].x << ' ' << contours[i].y << ' ' << contours[i].width << ' ' << contours[i].height << std::endl;
-        m_Coordinates.push_back({contours[i].x, contours[i].y, contours[i].width, contours[i].height });
-        //std::cout << m_Coordinates[i][0] << ' ' << m_Coordinates[i][1] << ' ' << m_Coordinates[i][2] << ' ' << m_Coordinates[i][3] << std::endl;
-    }
-    //std::cout << std::endl;
-
-    const int loop = (4-m_Coordinates.size());
-    for(int i=0; i<loop; ++i)
+    if(contours.empty()) 
     {
         m_Coordinates.push_back({0,0,0,0});
+        return;
     }
-    
+
+    for(int i=0; i<contours.size(); ++i)
+    {
+        m_Coordinates.push_back({contours[i].x, contours[i].y, (contours[i].width+contours[i].x), (contours[i].height+contours[i].y) });
+    }
 }
 
 void LimitProcessor::drawLocations(cv::Mat& image, const std::vector<cv::Rect>& contours,
@@ -485,7 +483,6 @@ void LimitProcessor::drawLocations(cv::Mat& image, const std::vector<cv::Rect>& 
 {
     if(contours.empty() )
     {
-        m_SpeedLimitDetected = false;
 		return;
     }
     cv::Mat helpImage = image.clone();
@@ -500,24 +497,22 @@ void LimitProcessor::drawLocations(cv::Mat& image, const std::vector<cv::Rect>& 
         cv::putText(image, (text + std::to_string(m_LimitValue) ), cv::Point(contours[i].x+1, (contours[i].y+contours[i].height+18)), 
             cv::FONT_HERSHEY_DUPLEX, 0.7f, colorText, 2);
     }
-    m_SpeedLimitDetected = true;
 }
 
-LimitProcessor::LimitProcessor() : 
-    m_SpeedLimitDetected{false}
+LimitProcessor::LimitProcessor()  :
+    m_LimitValue{80}
 {
     const std::string Path[NumOfClassifiers] = {SpeedLimitClassifier, SpeedLimitClassifier2};
     LimitProcessor::loadCascade(m_SpeedClassifier, NumOfClassifiers, Path);
     
     this->m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "0123456789", 1, 6); //PSM_CIRCLE_WORD
+    std::cout << std::endl;//
 }
 
 LimitProcessor::~LimitProcessor() 
 {
     system("rm \"tmp.png\"");   //remove help png file
 }
-
-#define Lilac cv::Scalar(255,0,255)
 
 void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
 {
@@ -553,7 +548,7 @@ void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
         }
     }
     LimitProcessor::setCoordinates(contours);
-    LimitProcessor::drawLocations(m_Frame, contours); //replaced Lilac with m_ColorMap[m_LimitValue]
+    //LimitProcessor::drawLocations(m_Frame, contours); 
 }
 
 sensor_msgs::Image LimitProcessor::getProcessedFrame(void) const
@@ -567,24 +562,26 @@ sensor_msgs::Image LimitProcessor::getProcessedFrame(void) const
     return image1;
 }
 
-bool LimitProcessor::getDetection(void) const
-{
-    return m_SpeedLimitDetected;
-}
-
 std::string LimitProcessor::getResult(void) const
 {
     if(m_LimitValue)
     {
         return std::to_string(m_LimitValue);
     }
-    else
-    {
-        return "NaN";
-    }
+    return "NaN";
 }
 
 std::vector<std::vector<int>> LimitProcessor::getCoordinates(void) const
 {
     return m_Coordinates;
+}
+
+Topics LimitProcessor::getWatchdogTopic(void) const
+{
+    return ImHere_LimDet;
+}
+
+Topics LimitProcessor::getCoordinateTopic(void) const
+{
+    return Coord_LimDet;
 }

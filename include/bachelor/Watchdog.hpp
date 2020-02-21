@@ -9,7 +9,8 @@
 
 #define NumOfNodes 3
 
-class Watchdog : public IObserver<std_msgs::Bool>
+class Watchdog : 
+    public IObserver<std_msgs::Bool>
 {
 private:
     std::map<Topics, bool*> m_TopicMap;

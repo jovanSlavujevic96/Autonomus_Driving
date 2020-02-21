@@ -12,7 +12,7 @@ class DetectorNode
 
     void init(void);
 public:
-    DetectorNode(std::unique_ptr<IImageProcessor> processor, Topics ImHere, Topics Coords);
+    DetectorNode(std::unique_ptr<IImageProcessor> processor);
     DetectorNode(std::unique_ptr<Detector> detector);
 
     void runProgram(void);

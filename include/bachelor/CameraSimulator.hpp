@@ -10,7 +10,8 @@
 #include <std_msgs/Bool.h>
 #include <image_transport/image_transport.h>
 
-class CameraSimulator : public IObserver<std_msgs::Bool>
+class CameraSimulator : 
+	public IObserver<std_msgs::Bool>
 {
 private:
 	std::unique_ptr<IDataSender<sensor_msgs::Image>> m_FrameEmiter;

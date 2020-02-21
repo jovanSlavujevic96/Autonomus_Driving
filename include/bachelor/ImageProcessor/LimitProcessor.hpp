@@ -8,14 +8,14 @@
 
 #define NumOfClassifiers 2
 
-class LimitProcessor : public IImageProcessor
+class LimitProcessor : 
+    public IImageProcessor
 {
 private:
     cv::CascadeClassifier m_SpeedClassifier[NumOfClassifiers];
     cv::Mat m_Frame, m_ImageMask;
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
     std::vector<std::vector<int>> m_Coordinates;
-    bool m_SpeedLimitDetected;
     int m_LimitValue;
 
     cv::Mat saveThenLoad(const cv::Mat& image);
@@ -45,8 +45,9 @@ public:
 
     void setFrame(const sensor_msgs::Image& frame) override;
     sensor_msgs::Image getProcessedFrame(void) const override;
-    bool getDetection(void) const override;
     std::string getResult(void) const override;
+    Topics getWatchdogTopic(void) const override;
+    Topics getCoordinateTopic(void) const override;
     std::vector<std::vector<int>> getCoordinates(void) const override;
 };
 

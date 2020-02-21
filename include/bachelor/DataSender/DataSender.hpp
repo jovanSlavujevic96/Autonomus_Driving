@@ -7,7 +7,8 @@
 #include <bachelor/Topics.h>
 
 template <typename T1>
-class DataSender : public IDataSender <T1>
+class DataSender : 
+    public IDataSender <T1>
 {   
     class ImplDataSender;
     std::unique_ptr<ImplDataSender> m_PimplDataSender;

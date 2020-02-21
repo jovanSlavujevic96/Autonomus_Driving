@@ -3,7 +3,8 @@
 
 #include "IVisualizer.hpp"
 
-class ObjectVisualizer : public IVisualizer
+class ObjectVisualizer : 
+    public IVisualizer
 {
     std::vector<cv::Rect> m_Rects;
     cv::Scalar m_RectColor, m_TextColor;
@@ -14,10 +15,7 @@ public:
     ObjectVisualizer(VisualizerType type);
     virtual ~ObjectVisualizer() = default;
 
-    void update(const bachelor::Coordinates& msg, Topics subjTopic) override;
-    bool doStuff(void) override;
-
-    void draw(cv::Mat& frame) override;
+    void draw(Frame* frame) override;
     VisualizerType getVisualizerType(void) override;
 };
 

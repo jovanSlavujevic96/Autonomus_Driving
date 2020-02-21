@@ -82,10 +82,10 @@ Watchdog::Watchdog() : m_NodeMSG{false}
     Watchdog::initMaps();    
 }
 
-void Watchdog::update(const std_msgs::Bool &_msg, Topics _subjTopic)
+void Watchdog::update(const std_msgs::Bool& msg, Topics subjTopic)
 {
-    *m_TopicMap[_subjTopic] = _msg.data;
-    std::cout << "received msg from: " << m_NodeMap[m_TopicMap[_subjTopic]] << std::endl;
+    *m_TopicMap[subjTopic] = msg.data;
+    std::cout << "received msg from: " << m_NodeMap[m_TopicMap[subjTopic]] << std::endl;
 }
 
 bool Watchdog::doStuff(void)

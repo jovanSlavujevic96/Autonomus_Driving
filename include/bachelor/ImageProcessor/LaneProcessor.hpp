@@ -5,7 +5,8 @@
 
 #include <opencv2/opencv.hpp>
 
-class LaneProcessor : public IImageProcessor
+class LaneProcessor : 
+    public IImageProcessor
 {
 private:
     cv::Mat m_Frame, m_FrameMask;
@@ -21,7 +22,7 @@ private:
     std::vector<cv::Vec4i> houghLines(const cv::Mat& image) const;
     std::vector<std::vector<cv::Vec4i>> lineSeparation(const cv::Mat& image, const std::vector<cv::Vec4i>& lines);
     std::vector<cv::Point> regression(const cv::Mat& image, const std::vector<std::vector<cv::Vec4i>>& lines);
-    void CalculateCoordinates(std::vector<cv::Point>& lanePts, const float resizeFactor);
+    void setCoordinates(std::vector<cv::Point>& lanePts, const float resizeFactor);
     
     void plotLane(cv::Mat& image, const std::vector<cv::Point>& lanePts, const float resizeFactor);
 
@@ -31,8 +32,9 @@ public:
 
     void setFrame(const sensor_msgs::Image& Frame) override;
     sensor_msgs::Image getProcessedFrame(void) const override;
-    bool getDetection(void) const override;
     std::string getResult(void) const override;
+    Topics getWatchdogTopic(void) const override;
+    Topics getCoordinateTopic(void) const override;
     std::vector<std::vector<int>> getCoordinates(void) const override;
 };
 

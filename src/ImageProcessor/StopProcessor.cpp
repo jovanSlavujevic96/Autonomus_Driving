@@ -12,6 +12,7 @@ void StopProcessor::loadCascade(cv::CascadeClassifier *cascade, const int size, 
             std::cout << "Error while loading cascade from path: " << path[i] << std::endl;
             std::exit(-1);
         }
+        std::cout << "Successfully loaded classifier from path: " << path[i] << std::endl;
     }
 }
 
@@ -192,42 +193,23 @@ std::vector<bool> StopProcessor::getDetectionPerRectFromOCR(const std::vector<cv
     return detection;
 }
 
-void StopProcessor::setDetection(const std::vector<bool> &detection, const std::vector<cv::Rect> &contours)
+void StopProcessor::setCoordinates(const std::vector<bool>& detection, const std::vector<cv::Rect>& contours)
 {
     if(contours.empty() )
     {
-        m_StopDetected = false;
-		return;
+        m_Coordinates.push_back( {0,0,0,0} );
+        m_Detection = false;
+        return;
     }
-    for(int i=0; i<detection.size(); ++i)
-    {
-        if(detection[i])
-        {
-            break;
-        }
-        else if(i == (detection.size()-1) && !detection[i] )
-        {
-            m_StopDetected = false;
-            return;
-        }
-    }
-    m_StopDetected = true;
-}
 
-void StopProcessor::setCoordinates(const std::vector<bool>& detection, const std::vector<cv::Rect>& contours)
-{
     for(int i=0; i<contours.size(); ++i)
     {
         if(detection[i])
         {
-            m_Coordinates.push_back({contours[i].x, contours[i].y, contours[i].width, contours[i].height });
+            m_Coordinates.push_back({contours[i].x, contours[i].y, (contours[i].width+contours[i].x), (contours[i].height+contours[i].y) });
         }
     }
-    const int loop = (4-m_Coordinates.size());
-    for(int i=0; i<loop; ++i)
-    {
-        m_Coordinates.push_back({0,0,0,0});
-    }
+    m_Detection = true;
 }
 
 void StopProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detection, const std::vector<cv::Rect> &contours,
@@ -251,10 +233,10 @@ void StopProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detec
                 cv::FONT_HERSHEY_DUPLEX, 0.7f, colorText, 1);
         }
     }
-    m_StopDetected = true;
 }
 
-StopProcessor::StopProcessor() : m_StopDetected{false}
+StopProcessor::StopProcessor() :
+    m_Detection{false}
 {
     const std::string Path = StopClassifierPath;
     StopProcessor::loadCascade(&m_StopClassifier, 1, &Path);
@@ -276,11 +258,8 @@ void StopProcessor::setFrame(const sensor_msgs::Image &Frame)
     auto images = StopProcessor::getTextImagesForOCR(numOfResizing, contours);
     auto detection = StopProcessor::getDetectionPerRectFromOCR(images);
     StopProcessor::setCoordinates(detection, contours);
-    StopProcessor::setDetection(detection, contours);
-    if(m_StopDetected)
-    {
-        StopProcessor::drawLocations(m_Frame, detection, contours);
-    }
+        
+    //StopProcessor::drawLocations(m_Frame, detection, contours);
 }
 
 sensor_msgs::Image StopProcessor::getProcessedFrame(void) const
@@ -294,17 +273,26 @@ sensor_msgs::Image StopProcessor::getProcessedFrame(void) const
     return image1;
 }
 
-bool StopProcessor::getDetection(void) const
-{
-    return m_StopDetected;
-}
-
 std::string StopProcessor::getResult(void) const
 {
-    return "Stop Sign";
+    if(m_Detection)
+    {
+        return "STOP";
+    }
+    return "NO STOP";
 }
 
 std::vector<std::vector<int>> StopProcessor::getCoordinates(void) const
 {
     return m_Coordinates;
+}
+
+Topics StopProcessor::getWatchdogTopic(void) const
+{
+    return ImHere_StopDet;
+}
+
+Topics StopProcessor::getCoordinateTopic(void) const
+{
+    return Coord_StopDet;
 }

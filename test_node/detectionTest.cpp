@@ -7,6 +7,8 @@
 #define play 1
 #define pause 0
 
+#include <bachelor/ECU.hpp>
+
 int main(int argc, char **argv)
 {
     std::string VideoPath = "/home/rtrk/Videos/testVideos/LimitTest3.mp4";
@@ -15,24 +17,16 @@ int main(int argc, char **argv)
         VideoPath = std::string("/home/rtrk/Videos/testVideos/") + std::string(argv[1]);
     }
 
-    /*
     LaneProcessor lane;
-    cv::VideoCapture cap(VideoPath);
-    //*/
-
-    ///*
     LimitProcessor speed;
-    cv::VideoCapture cap(VideoPath);
-    //*/
-
-    /*
     StopProcessor stop;
-    cv::VideoCapture cap(VideoPath);
-    //*/
 
+    cv::VideoCapture cap(VideoPath);
     if(!cap.isOpened() ) 
+    {
+        std::cout << std::endl << "Theres no such a video: " << std::endl << VideoPath << std::endl;
         return -1;
-    
+    }
     int state = play;
     cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
     sensor_msgs::Image img1;
@@ -46,12 +40,12 @@ int main(int argc, char **argv)
 		cv_ptr->image = frame;
 		cv_ptr->toImageMsg(img1);
 
-        ///*
+        /*
         speed.setFrame(img1);
         img1 = speed.getProcessedFrame();
         //*/
 
-        /*
+        //*
         lane.setFrame(img1);
         img1 = lane.getProcessedFrame();
         //*/
@@ -65,7 +59,6 @@ int main(int argc, char **argv)
 		//cv::resize(frame, frame, cv::Size(std::round(frame.cols*0.6), std::round(frame.rows*0.6)));
         cv::imshow("video stream", frame );
         
-        //std::cout << speed.getResult() << std::endl;
 
         auto btn = cv::waitKey(state);
         if(btn == 27 || btn == 'q' || btn == 'Q') break;

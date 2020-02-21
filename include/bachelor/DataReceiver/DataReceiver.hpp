@@ -5,7 +5,8 @@
 #include <memory>
 
 template <typename T1>
-class DataReceiver : public IDataReceiver<T1>
+class DataReceiver : 
+    public IDataReceiver<T1>
 {
     class ImplDataReceiver;
     std::unique_ptr<ImplDataReceiver> m_PimplDataReceiver;

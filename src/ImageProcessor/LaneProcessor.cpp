@@ -1,6 +1,8 @@
 #include <bachelor/ImageProcessor/LaneProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
+#define threshold 5
+
 void LaneProcessor::resize(cv::Mat& image, const float resizeFactor)
 {
     cv::resize(image, image, cv::Size( std::round(image.size().width*resizeFactor), std::round(image.size().height*resizeFactor) ) ); 
@@ -27,10 +29,10 @@ void LaneProcessor::createMask(const cv::Mat& image)
     cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
 
     //for specific video
-    const int x0 = 295, y0 = 555;
-    const int x1 = 890, y1 = y0;
-    const int x2 = 610, y2 = 445;
-    const int x3 = 470, y3 = y2;
+    const int x0 = 290, y0 = 555;
+    const int x1 = 895, y1 = y0;
+    const int x2 = 615, y2 = 445;
+    const int x3 = 465, y3 = y2;
   
     cv::Point pts[4] = 
     {
@@ -193,7 +195,7 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std
     return output;
 }
 
-void LaneProcessor::CalculateCoordinates(std::vector<cv::Point>& lanePts, const float resizeFactor)
+void LaneProcessor::setCoordinates(std::vector<cv::Point>& lanePts, const float resizeFactor)
 {
     //resize lines
     for(int i=0; i<lanePts.size(); ++i)
@@ -295,7 +297,7 @@ void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
     auto lines = LaneProcessor::houghLines(forProcess);
     auto separatedLines = LaneProcessor::lineSeparation(helpImage, lines);
     auto regression = LaneProcessor::regression(helpImage, separatedLines);
-    LaneProcessor::CalculateCoordinates(regression, percentage);
+    LaneProcessor::setCoordinates(regression, percentage);
     LaneProcessor::plotLane(m_Frame, regression, percentage);
 }
 
@@ -311,21 +313,8 @@ sensor_msgs::Image LaneProcessor::getProcessedFrame(void) const
     return img1;
 }
 
-bool LaneProcessor::getDetection(void) const
-{
-    if(m_RightFlag || m_LeftFlag)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
 std::string LaneProcessor::getResult(void) const    
 {
-    const int threshold = 10;
     if( m_RefDot.x - m_MeasuredDot.x >= threshold )    //its going right
     {
         return "Turn Left";
@@ -343,4 +332,14 @@ std::string LaneProcessor::getResult(void) const
 std::vector<std::vector<int>> LaneProcessor::getCoordinates(void) const
 {
     return m_Coordinates;
+}
+
+Topics LaneProcessor::getWatchdogTopic(void) const
+{
+    return ImHere_LaneDet;
+}
+
+Topics LaneProcessor::getCoordinateTopic(void) const
+{
+    return Coord_LaneDet;
 }

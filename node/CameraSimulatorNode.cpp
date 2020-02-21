@@ -48,13 +48,12 @@ int main(int argc, char **argv)
 
 	while(ros::ok() )
 	{
-		bool info = PlayerObserver->doStuff();
-		if(!info)
+		if(!PlayerObserver->doStuff())
 		{
 			std::cout << "No more frames!" << std::endl;
 			break;
 		}
-		cv::waitKey(fps); //60 za sporije
+		cv::waitKey(fps); 
 		ros::spinOnce();
 	}
 

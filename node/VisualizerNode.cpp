@@ -11,7 +11,7 @@
 int main(int argc, char **argv)
 {
     bool draw[3] = {false};
-    std::shared_ptr<IVisualizer> visualizer[3];
+    std::unique_ptr<IVisualizer> visualizer[3];
     if(argc >= 2)
     {
         for(int i=1; i<argc; ++i)
@@ -21,15 +21,15 @@ int main(int argc, char **argv)
                 draw[i-1] = true;
                 if((i-1)==0)
                 {
-                    visualizer[i-1] = std::make_shared<LaneVisualizer>();
+                    visualizer[i-1] = std::make_unique<LaneVisualizer>();
                 }
                 else if((i-1)==1)
                 {
-                    visualizer[i-1] = std::make_shared<ObjectVisualizer>(LimitVizType);
+                    visualizer[i-1] = std::make_unique<ObjectVisualizer>(LimitVizType);
                 }
                 else if((i-1)==2)
                 {
-                    visualizer[i-1] = std::make_shared<ObjectVisualizer>(StopVizType);
+                    visualizer[i-1] = std::make_unique<ObjectVisualizer>(StopVizType);
                 }
             }
         }
@@ -48,8 +48,8 @@ int main(int argc, char **argv)
             if(draw[i])
             {
                 coordinatesRcv[i] = std::make_unique<DataReceiver<bachelor::Coordinates>>(topics[i]);
-                coordinatesRcv[i]->registerObserver( visualizer[i].get() );
-                display.addVisualizer( visualizer[i].get() );
+                coordinatesRcv[i]->registerObserver(&display);
+                display.addVisualizer(visualizer[i].get(), topics[i]);
             }
         }
     }
@@ -59,13 +59,9 @@ int main(int argc, char **argv)
     
     std::cout << nodeName << " successfully initialized." << std::endl; 
 
-    while(ros::ok() )
+    while(ros::ok() && display.doStuff() )
     {
         ros::spinOnce();
-        if( !display.doStuff() ) 
-        {
-            break;
-        }
     }
 
     return 0;
