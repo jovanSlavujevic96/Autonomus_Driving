@@ -6,7 +6,6 @@
 class ObjectVisualizer : 
     public IVisualizer
 {
-    std::vector<cv::Rect> m_Rects;
     cv::Scalar m_RectColor, m_TextColor;
     std::string m_SignName;
     const VisualizerType m_VisualizerType;

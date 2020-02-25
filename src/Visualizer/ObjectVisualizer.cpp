@@ -19,38 +19,24 @@ ObjectVisualizer::ObjectVisualizer(VisualizerType type) :
 
 void ObjectVisualizer::draw(Frame* frame)
 {
-    for(int i=0; i<(frame->Dots.size() ); ++i)
+    if( !frame->Dots.size() || (frame->Dots[0][0] == cv::Point(0,0) && frame->Dots[0][1] == cv::Point(0,0) ) )
     {
-        m_Rects.push_back(cv::Rect(frame->Dots[i][0], frame->Dots[i][1] ));
-    }
-
-    int size=0;
-    for(int i=0; i<m_Rects.size(); ++i)
-    {
-        if(m_Rects[i] == cv::Rect(0,0,0,0) )
-        {
-            if(i==0)
-            {
-                m_Rects.clear();    //reset vector
-                return;    //there are no rects and that's ok
-            }
-            size = i;
-            break;
-        }    
+        return;
     }
     auto helpImage = (*frame->MatFrame).clone();
-	for(int i=0; i<size; ++i)
+	for(int i=0; i<frame->Dots.size(); ++i)
     {
-        cv::rectangle(*frame->MatFrame, m_Rects[i], m_RectColor, -1);
+        cv::rectangle(*frame->MatFrame, cv::Rect(frame->Dots[i][0], frame->Dots[i][1]), m_RectColor, -1);
     }
 	cv::addWeighted(helpImage, 0.8f, *frame->MatFrame, 0.2f, 0, *frame->MatFrame);
-	for(int i = 0 ; i <size; ++i) 
+	for(int i = 0 ; i<frame->Dots.size(); ++i) 
     {
-        cv::rectangle(*frame->MatFrame, m_Rects[i], m_RectColor, 3);
-        cv::putText(*frame->MatFrame, m_SignName, cv::Point(m_Rects[i].x+1, (m_Rects[i].width+m_Rects[i].y+18)), 
-            cv::FONT_HERSHEY_DUPLEX, 0.7f, m_TextColor, 1);
+        auto rect = cv::Rect(frame->Dots[i][0], frame->Dots[i][1]);
+        cv::rectangle(*frame->MatFrame, cv::Rect(frame->Dots[i][0], frame->Dots[i][1]), m_RectColor, 3);
+        auto pt = cv::Point( rect.x+1, rect.width+rect.y+18 );
+        cv::putText(*frame->MatFrame, (m_SignName+frame->Text[0]), pt, cv::FONT_HERSHEY_DUPLEX, 0.7f, m_TextColor, 1);
     }
-    m_Rects.clear();    //reset vector
+    std::cout << "DRAW\n";
 }
 
 VisualizerType ObjectVisualizer::getVisualizerType(void)

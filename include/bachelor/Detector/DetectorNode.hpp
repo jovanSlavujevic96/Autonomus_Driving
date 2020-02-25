@@ -1,7 +1,7 @@
-#ifndef BACHELOR_DETECTORNODE_HPP_
-#define BACHELOR_DETECTORNODE_HPP_
+#ifndef BACHELOR_DETECTOR_DETECTORNODE_HPP_
+#define BACHELOR_DETECTOR_DETECTORNODE_HPP_
 
-#include <bachelor/Detector.hpp>
+#include "Detector.hpp"
 #include <bachelor/DataReceiver/DataReceiver.hpp>
 #include <bachelor/ImageProcessor/IImageProcessor.hpp>
 
@@ -20,4 +20,4 @@ public:
     ~DetectorNode() = default;
 };
 
-#endif //BACHELOR_DETECTORNODE_HPP_
+#endif //BACHELOR_DETECTOR_DETECTORNODE_HPP_

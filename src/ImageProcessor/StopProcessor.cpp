@@ -282,17 +282,22 @@ std::string StopProcessor::getResult(void) const
     return "NO STOP";
 }
 
-std::vector<std::vector<int>> StopProcessor::getCoordinates(void) const
-{
-    return m_Coordinates;
-}
-
-Topics StopProcessor::getWatchdogTopic(void) const
+Topic StopProcessor::getWatchdogTopic(void) const
 {
     return ImHere_StopDet;
 }
 
-Topics StopProcessor::getCoordinateTopic(void) const
+Topic StopProcessor::getCoordinateTopic(void) const
 {
     return Coord_StopDet;
+}
+
+Topic StopProcessor::getECUTopic(void) const
+{
+    return ECU_StopDet;
+}
+
+std::vector<std::vector<int>> StopProcessor::getCoordinates(void) const
+{
+    return m_Coordinates;
 }

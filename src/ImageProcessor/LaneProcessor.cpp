@@ -188,10 +188,12 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std
     output[2] = cv::Point(left_ini_x, ini_y);
     output[3] = cv::Point(left_fin_x, fin_y);
 
-    const int dotX = std::round( (output[1].x+output[3].x)/2);
-    const int dotY = output[1].y;
-    m_MeasuredDot = cv::Point(dotX, dotY);
-
+    if(m_LeftFlag && m_RightFlag)
+    {
+        const int dotX = std::round( (output[1].x+output[3].x)/2);
+        const int dotY = output[1].y;
+        m_MeasuredDot = cv::Point(dotX, dotY);
+    }
     return output;
 }
 
@@ -315,6 +317,10 @@ sensor_msgs::Image LaneProcessor::getProcessedFrame(void) const
 
 std::string LaneProcessor::getResult(void) const    
 {
+    if(m_MeasuredDot == cv::Point() )
+    {
+        return "Changing the Lane";
+    }
     if( m_RefDot.x - m_MeasuredDot.x >= threshold )    //its going right
     {
         return "Turn Left";
@@ -329,17 +335,22 @@ std::string LaneProcessor::getResult(void) const
     }
 }
 
-std::vector<std::vector<int>> LaneProcessor::getCoordinates(void) const
-{
-    return m_Coordinates;
-}
-
-Topics LaneProcessor::getWatchdogTopic(void) const
+Topic LaneProcessor::getWatchdogTopic(void) const
 {
     return ImHere_LaneDet;
 }
 
-Topics LaneProcessor::getCoordinateTopic(void) const
+Topic LaneProcessor::getCoordinateTopic(void) const
 {
     return Coord_LaneDet;
+}
+
+Topic LaneProcessor::getECUTopic(void) const
+{
+    return ECU_LaneDet;
+}
+
+std::vector<std::vector<int>> LaneProcessor::getCoordinates(void) const
+{
+    return m_Coordinates;
 }

@@ -2,6 +2,7 @@
 
 #include <ros/ros.h>
 #include <vector>
+#include <bachelor/TopicName.h>
 
 //relevant types
 #include <image_transport/image_transport.h>
@@ -16,19 +17,22 @@ template class DataReceiver<bachelor::Coordinates>;
 #include <std_msgs/String.h>
 template class DataReceiver<std_msgs::String>;
 
+#include <bachelor/Log.h>
+template class DataReceiver<bachelor::Log>;
+
 //default
 template <typename T1>
 class DataReceiver<T1>::ImplDataReceiver
 {
     ros::Subscriber Subscriber;
-    Topics TopicTo;
-    std::vector<IObserver<T1>* > Observers;
+    Topic TopicTo;
+    std::vector<IObserver<T1>*> Observers;
 
     void Callback(const T1& msg)
     {
         notifyObservers(msg);
     };
-    void notifyObservers(T1 data)
+    void notifyObservers(const T1& data)
     {
         for (IObserver<T1>* observer : Observers)  // notify all observers
         {
@@ -36,11 +40,11 @@ class DataReceiver<T1>::ImplDataReceiver
         }
     };
 public:
-    ImplDataReceiver(const Topics topicName) : 
+    ImplDataReceiver(const Topic topicName) : 
         TopicTo{topicName}
     {
         ros::NodeHandle node;
-        Subscriber = node.subscribe(TopicName[topicName], 4, &DataReceiver<T1>::ImplDataReceiver::Callback, this);    
+        Subscriber = node.subscribe(TopicName[topicName], 1, &DataReceiver<T1>::ImplDataReceiver::Callback, this);    
     };
 	~ImplDataReceiver() = default;
 
@@ -67,41 +71,41 @@ template <>
 class DataReceiver<sensor_msgs::Image>::ImplDataReceiver
 {
     image_transport::Subscriber Subscriber;
-    Topics TopicTo;
-    std::vector<IObserver<sensor_msgs::Image> *> Observers;
+    Topic TopicTo;
+    std::vector<IObserver<sensor_msgs::Image>*> Observers;
 
-    void Callback(const sensor_msgs::ImageConstPtr &_Msg)
+    void Callback(const sensor_msgs::ImageConstPtr& msg)
     {
         try
         {
-            notifyObservers(*_Msg);
+            notifyObservers(*msg);
         }
-        catch(cv_bridge::Exception &error)
+        catch(cv_bridge::Exception& error)
         {
             std::cerr << "Error receiving message" << std::endl;
         }
     };
-    void notifyObservers(sensor_msgs::Image _data)
+    void notifyObservers(const sensor_msgs::Image& data)
     {
-        for (IObserver<sensor_msgs::Image> *observer : Observers)  // notify all observers
+        for (IObserver<sensor_msgs::Image>* observer : Observers)  // notify all observers
         {
-            observer->update(_data, TopicTo);
+            observer->update(data, TopicTo);
         }
     };
 public:
-    ImplDataReceiver(const Topics _topicName) : TopicTo{_topicName}
+    ImplDataReceiver(const Topic topicName) : TopicTo{topicName}
     {
         ros::NodeHandle node;
         image_transport::ImageTransport it(node);
-        Subscriber = it.subscribe(TopicName[_topicName], 1, &DataReceiver<sensor_msgs::Image>::ImplDataReceiver::Callback, this);   
+        Subscriber = it.subscribe(TopicName[topicName], 1, &DataReceiver<sensor_msgs::Image>::ImplDataReceiver::Callback, this);   
     };
 	~ImplDataReceiver() = default;
 
-    void registerObserver(IObserver<sensor_msgs::Image> *observer)
+    void registerObserver(IObserver<sensor_msgs::Image>* observer)
     {
         Observers.push_back(observer);
     };
-	void removeObserver(IObserver<sensor_msgs::Image> *observer)
+	void removeObserver(IObserver<sensor_msgs::Image>* observer)
     {
         auto iterator = std::find(Observers.begin(), Observers.end(), observer);
         if (iterator != Observers.end()) // observer found
@@ -113,7 +117,7 @@ public:
 
 //main class impl
 template <typename T1>
-DataReceiver<T1>::DataReceiver(const Topics topicName) :
+DataReceiver<T1>::DataReceiver(const Topic topicName) :
     m_PimplDataReceiver{std::make_unique<DataReceiver<T1>::ImplDataReceiver>(topicName) }
 {
 
@@ -123,13 +127,13 @@ template <typename T1>
 DataReceiver<T1>::~DataReceiver() = default;
 
 template <typename T1>
-void DataReceiver<T1>::registerObserver(IObserver<T1> *observer)
+void DataReceiver<T1>::registerObserver(IObserver<T1>* observer)
 {
     m_PimplDataReceiver->registerObserver(observer);
 }
 
 template <typename T1>
-void DataReceiver<T1>::removeObserver(IObserver<T1> *observer)
+void DataReceiver<T1>::removeObserver(IObserver<T1>* observer)
 {
     m_PimplDataReceiver->removeObserver(observer);
 }

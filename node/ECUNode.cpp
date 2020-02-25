@@ -10,11 +10,12 @@ int main(int argc, char **argv)
 
     ECU ecu;
     std::unique_ptr<IDataReceiver<std_msgs::String>> stringRcv[3];
-    const Topics topics[3] = {ECU_LaneDet, ECU_LimDet, ECU_StopDet};
+    const Topic topics[3] = {ECU_LaneDet, ECU_LimDet, ECU_StopDet};
     for(int i=0; i<3; ++i)
     {
         stringRcv[i] = std::make_unique<DataReceiver<std_msgs::String>>(topics[i]);
         stringRcv[i]->registerObserver(&ecu);
+        ecu.addTopic(topics[i]);
     }
 
     std::cout << nodeName << " successfully initialized" << std::endl;

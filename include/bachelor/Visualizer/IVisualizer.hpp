@@ -3,8 +3,7 @@
 
 #include <bachelor/Frame.h>
 
-enum VisualizerType{LaneVizType, StopVizType, LimitVizType};
-
+enum VisualizerType{LaneVizType, StopVizType, LimitVizType, LogVizType};
 
 class IVisualizer
 {
@@ -12,7 +11,6 @@ public:
     explicit IVisualizer() = default;
     virtual ~IVisualizer() = default;
 
-    
     virtual void draw(Frame* frame) = 0;
     virtual VisualizerType getVisualizerType(void) = 0;
 };

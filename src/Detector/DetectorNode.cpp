@@ -1,4 +1,4 @@
-#include <bachelor/DetectorNode.hpp>
+#include <bachelor/Detector/DetectorNode.hpp>
 #include <ros/ros.h>
 
 void DetectorNode::init(void)

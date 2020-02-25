@@ -4,7 +4,7 @@
 #include "IDataSender.hpp"
 
 #include <memory>
-#include <bachelor/Topics.h>
+#include <bachelor/Topic.h>
 
 template <typename T1>
 class DataSender : 
@@ -12,13 +12,13 @@ class DataSender :
 {   
     class ImplDataSender;
     std::unique_ptr<ImplDataSender> m_PimplDataSender;
-    Topics m_Topic;
+    Topic m_Topic;
 public:
-    DataSender(const Topics topicName);
+    DataSender(const Topic topicName);
     virtual ~DataSender();
 
-    void Publish(T1& data) override;
-    Topics getTopic(void) const override;
+    void Publish(const T1& data) override;
+    Topic getTopic(void) const override;
 };
 
 #endif //BACHELOR_DATASENDER_DATASENDER_HPP_

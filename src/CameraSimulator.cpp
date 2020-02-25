@@ -10,9 +10,9 @@ CameraSimulator::CameraSimulator() :
 
 }
 
-void CameraSimulator::setVideo(cv::VideoCapture &_video)
+void CameraSimulator::setVideo(cv::VideoCapture& video)
 {
-	m_Video = _video;
+	m_Video = video;
 }
 
 void CameraSimulator::checkMsgs(void)
@@ -23,11 +23,11 @@ void CameraSimulator::checkMsgs(void)
 	m_PauseVideo = m_NodeMSG;
 }
 
-void CameraSimulator::update(const std_msgs::Bool &_msg, Topics _subjTopic)
+void CameraSimulator::update(const std_msgs::Bool& msg, const Topic subjTopic)
 {
-	if(_subjTopic == PauseOrPlay)
+	if(subjTopic == PauseOrPlay)
 	{
-		m_NodeMSG = _msg.data;
+		m_NodeMSG = msg.data;
 	}
 }
 
@@ -50,10 +50,6 @@ bool CameraSimulator::doStuff(void)
 		sensor_msgs::Image img1;
 		cv_ptr->toImageMsg(img1);
 		m_FrameEmiter->Publish(img1);
-		return true;
 	}
-	else 
-	{
-		return true;
-	}
+	return true;
 }

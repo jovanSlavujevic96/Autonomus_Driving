@@ -1,5 +1,5 @@
-#ifndef BACHELOR_DETECTOR_HPP_
-#define BACHELOR_DETECTOR_HPP_
+#ifndef BACHELOR_DETECTOR_DETECTOR_HPP_
+#define BACHELOR_DETECTOR_DETECTOR_HPP_
 
 #include <memory>
 
@@ -19,14 +19,15 @@ class Detector :
 private:
 	std::unique_ptr<IDataSender<std_msgs::Bool>> m_DataEmiterWatchdog;
 	std::unique_ptr<IDataSender<bachelor::Coordinates>> m_CoordSender;
+	std::unique_ptr<IDataSender<std_msgs::String>> m_ToECU;
 	std::unique_ptr<IImageProcessor> m_ImgProc;
 
 public:
 	Detector(std::unique_ptr<IImageProcessor> procType);
 	virtual ~Detector() = default;
 	
-	void update(const sensor_msgs::Image& msg, Topics subjTopic) override;	//observer method
+	void update(const sensor_msgs::Image& msg, const Topic subjTopic) override;	//observer method
 	bool doStuff(void) override;
 };
 
-#endif //BACHELOR_DETECTOR_HPP_
+#endif //BACHELOR_DETECTOR_DETECTOR_HPP_

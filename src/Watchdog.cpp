@@ -1,4 +1,5 @@
 #include <bachelor/Watchdog.hpp>
+#include <bachelor/NodeName.h>
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
@@ -10,43 +11,39 @@
 static int count = 0;
 static bool key = false;
 
-void Watchdog::initMaps(void)
-{
-    const Topics topics[NumOfNodes] = {ImHere_CamSim, ImHere_Visual, ImHere_LaneDet };
-    const std::string nodes[NumOfNodes] = {"CameraSimulator_Node", "Visualizer_Node", "LaneDetector_Node"};
-    for(int i=0; i<NumOfNodes; ++i)
-    {
-        m_TopicMap[topics[i]] = &m_NodeMSG[i];
-        m_NodeMap[&m_NodeMSG[i]] = nodes[i];
-    }
-}
-
 void Watchdog::initConnection(void)
 {
-    if(std::accumulate(m_NodeMSG, m_NodeMSG + NumOfNodes, 0) == NumOfNodes) 
+    m_Connection = Watchdog::checkMsgs();
+}
+
+bool Watchdog::checkMsgs(void)
+{
+    for(const auto& rcv : m_ImHereRcv)
     {
-        m_Connection = true;
-        return;
+        if(!rcv.second)
+        {
+            return false;
+        }
     }
-    m_Connection = false;
+    return true;
 }
 
 void Watchdog::checkNodes(void)
 {
-    if(std::accumulate(m_NodeMSG, m_NodeMSG + NumOfNodes, 0) == NumOfNodes && count <= counter_limit)
+    if(Watchdog::checkMsgs() && count <= counter_limit)
     {
         std::cout << "\nOK\n";
         count = 0;
         Watchdog::resetMessages(); //reset all messages
     }
-    else if(std::accumulate(m_NodeMSG, m_NodeMSG + NumOfNodes, 0) < NumOfNodes  && count == counter_limit)
+    else if(!Watchdog::checkMsgs() && count == counter_limit)
     {
         std::cout << std::endl;
-        for(int i=0; i<NumOfNodes; ++i)
+        for(const auto& rcv : m_ImHereRcv)
         {
-            if(!m_NodeMSG[i])
+            if(!rcv.second)
             {
-                std::cout << m_NodeMap[&m_NodeMSG[i]] << " is unconnected" << std::endl;
+                std::cout << NodeName[rcv.first] << " is unconnected" << std::endl;
             }
         }
         std::cout << std::endl;
@@ -60,10 +57,10 @@ void Watchdog::resetNodes(void)
 {
     std::cout << "Watchdog will reset all nodes." << std::endl;
     usleep(2*mil);
-    for(int i=0; i<NumOfNodes; ++i)
+    for(const auto& topic : m_ImHereRcv)
     {
         std::stringstream ss;
-        ss << "rosnode kill " << m_NodeMap[&m_NodeMSG[i]];
+        ss << "rosnode kill " << NodeName[topic.first];
         system(ss.str().c_str() );
     }
     system("gnome-terminal --command='roslaunch bachelor project.launch'");
@@ -74,18 +71,27 @@ void Watchdog::resetNodes(void)
 
 void Watchdog::resetMessages(void)
 {
-    std::fill(std::begin(m_NodeMSG), std::end(m_NodeMSG), false); //reset all msgs
+    for(auto& msg : m_ImHereRcv)
+    {
+        msg.second = false;
+    }
 }
 
-Watchdog::Watchdog() : m_NodeMSG{false}
+Watchdog::Watchdog() :
+    m_Connection{false}
 {
-    Watchdog::initMaps();    
+    
 }
 
-void Watchdog::update(const std_msgs::Bool& msg, Topics subjTopic)
+void Watchdog::addNodeToWatch(const Topic topic)
 {
-    *m_TopicMap[subjTopic] = msg.data;
-    std::cout << "received msg from: " << m_NodeMap[m_TopicMap[subjTopic]] << std::endl;
+    m_ImHereRcv[topic] = false;
+}
+
+void Watchdog::update(const std_msgs::Bool& msg, const Topic subjTopic)
+{
+    m_ImHereRcv[subjTopic] = msg.data;
+    std::cout << "received msg from: " << NodeName[subjTopic] << std::endl;
 }
 
 bool Watchdog::doStuff(void)

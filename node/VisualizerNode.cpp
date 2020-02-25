@@ -7,6 +7,7 @@
 
 #include <bachelor/Visualizer/LaneVisualizer.hpp>
 #include <bachelor/Visualizer/ObjectVisualizer.hpp>
+#include <bachelor/Visualizer/LogVisualizer.hpp>
 
 int main(int argc, char **argv)
 {
@@ -41,7 +42,7 @@ int main(int argc, char **argv)
     std::unique_ptr<IDataReceiver<bachelor::Coordinates>> coordinatesRcv[3];
     {
         const std::string names[3] = {"lanes", "limit rects", "stop rects"};
-        const Topics topics[3] = {Coord_LaneDet, Coord_LimDet, Coord_StopDet};
+        const Topic topics[3] = {Coord_LaneDet, Coord_LimDet, Coord_StopDet};
         for(int i=0; i<3; ++i)
         {
             std::cout << "draw "<< names[i] << ": " << std::boolalpha << draw[i] << std::endl;
@@ -53,9 +54,15 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    std::unique_ptr<IVisualizer> logViz = std::make_unique<LogVisualizer>();
+    display.addVisualizer(logViz.get(), LogFromECU);
     
     std::unique_ptr<IDataReceiver<sensor_msgs::Image>> framesRcv = std::make_unique<DataReceiver<sensor_msgs::Image>>(RawFrame);
     framesRcv->registerObserver(&display);
+
+    std::unique_ptr<IDataReceiver<bachelor::Log>> logRcv = std::make_unique<DataReceiver<bachelor::Log>>(LogFromECU);
+    logRcv->registerObserver(&display);
     
     std::cout << nodeName << " successfully initialized." << std::endl; 
 

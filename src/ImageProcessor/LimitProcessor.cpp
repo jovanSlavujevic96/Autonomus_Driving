@@ -500,7 +500,7 @@ void LimitProcessor::drawLocations(cv::Mat& image, const std::vector<cv::Rect>& 
 }
 
 LimitProcessor::LimitProcessor()  :
-    m_LimitValue{80}
+    m_LimitValue{0}
 {
     const std::string Path[NumOfClassifiers] = {SpeedLimitClassifier, SpeedLimitClassifier2};
     LimitProcessor::loadCascade(m_SpeedClassifier, NumOfClassifiers, Path);
@@ -571,17 +571,22 @@ std::string LimitProcessor::getResult(void) const
     return "NaN";
 }
 
-std::vector<std::vector<int>> LimitProcessor::getCoordinates(void) const
-{
-    return m_Coordinates;
-}
-
-Topics LimitProcessor::getWatchdogTopic(void) const
+Topic LimitProcessor::getWatchdogTopic(void) const
 {
     return ImHere_LimDet;
 }
 
-Topics LimitProcessor::getCoordinateTopic(void) const
+Topic LimitProcessor::getCoordinateTopic(void) const
 {
     return Coord_LimDet;
+}
+
+Topic LimitProcessor::getECUTopic(void) const
+{
+    return ECU_LimDet;
+}
+
+std::vector<std::vector<int>> LimitProcessor::getCoordinates(void) const
+{
+    return m_Coordinates;
 }

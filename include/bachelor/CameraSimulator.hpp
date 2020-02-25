@@ -27,7 +27,7 @@ public:
 
 	void setVideo(cv::VideoCapture& video);
 
-	void update(const std_msgs::Bool& msg, Topics subjTopic) override;
+	void update(const std_msgs::Bool& msg, const Topic subjTopic) override;
 	bool doStuff(void) override;
 };
 

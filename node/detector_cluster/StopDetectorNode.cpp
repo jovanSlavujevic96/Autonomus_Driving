@@ -1,4 +1,4 @@
-#include <bachelor/DetectorNode.hpp>
+#include <bachelor/Detector/DetectorNode.hpp>
 #include <bachelor/ImageProcessor/StopProcessor.hpp>
 
 int main(int argc, char **argv)

@@ -28,6 +28,7 @@ find_package(OpenCV 3 REQUIRED )
 add_message_files(
   FILES
   Coordinates.msg
+  Log.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -83,6 +84,8 @@ include_directories(
 ####### Data Protocol Lib ########################
 
 add_library(_DataProtocolLib
+  src/TopicName.cc
+  src/NodeName.cc
   src/DataSender/DataSender.cpp
   src/DataReceiver/DataReceiver.cpp
 )
@@ -103,8 +106,8 @@ target_link_libraries(CameraSimulator_Node
 ############################################## Cluster of Detector Nodes
 
 add_library(_DetectorLib
-  src/Detector.cpp  
-  src/DetectorNode.cpp
+  src/Detector/Detector.cpp  
+  src/Detector/DetectorNode.cpp
 )
 ####### Image Processor Lib #######
 
@@ -181,6 +184,7 @@ add_library(_DisplayLib
 add_library(_VisualizerLib
   src/Visualizer/LaneVisualizer.cpp
   src/Visualizer/ObjectVisualizer.cpp
+  src/Visualizer/LogVisualizer.cpp
 )
 
 add_executable(Visualizer_Node node/VisualizerNode.cpp ) 

@@ -33,8 +33,9 @@ public:
     void setFrame(const sensor_msgs::Image& Frame) override;
     sensor_msgs::Image getProcessedFrame(void) const override;
     std::string getResult(void) const override;
-    Topics getWatchdogTopic(void) const override;
-    Topics getCoordinateTopic(void) const override;
+    Topic getWatchdogTopic(void) const override;
+    Topic getCoordinateTopic(void) const override;
+    Topic getECUTopic(void) const override;
     std::vector<std::vector<int>> getCoordinates(void) const override;
 };
 

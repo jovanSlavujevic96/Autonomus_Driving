@@ -5,31 +5,29 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <std_msgs/Bool.h>
-
-#define NumOfNodes 3
 
 class Watchdog : 
     public IObserver<std_msgs::Bool>
 {
 private:
-    std::map<Topics, bool*> m_TopicMap;
-    std::map<bool*, std::string> m_NodeMap;
-
-    bool m_NodeMSG[NumOfNodes];
+    std::map<Topic, bool> m_ImHereRcv;
     bool m_Connection;
 
-    void initMaps(void);
     void initConnection(void);
     void resetNodes(void);
     void resetMessages(void);
+    bool checkMsgs(void);
     void checkNodes(void);
 
 public:
     Watchdog();
     virtual ~Watchdog() = default;
 
-    void update(const std_msgs::Bool& msg, Topics subjTopic) override;
+    void addNodeToWatch(const Topic topic);
+
+    void update(const std_msgs::Bool& msg, const Topic subjTopic) override;
     bool doStuff(void) override;
 };
 

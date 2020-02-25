@@ -7,6 +7,7 @@ struct Frame
 {
     cv::Mat *MatFrame;
     std::vector<std::vector<cv::Point>> Dots;
+    std::vector<std::string> Text;
 };
 
 #endif//BACHELOR_FRAME_H_
