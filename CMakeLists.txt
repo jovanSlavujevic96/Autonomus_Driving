@@ -233,11 +233,9 @@ target_link_libraries(detTest
   ${catkin_LIBRARIES}
 )
 
-add_executable(detTest2 test_node/help.cpp ) 
+add_executable(circleDet test_node/circleDet.cpp ) 
 
-target_link_libraries(detTest2 
-  _DetectorLib
-  _ImageProcessorLib
+target_link_libraries(circleDet 
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES}
 )

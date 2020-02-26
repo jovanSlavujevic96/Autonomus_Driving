@@ -47,11 +47,18 @@ void LaneProcessor::createMask(const cv::Mat& image)
     m_FrameMask = mask.clone(); //return
 }
 
+int glob=0;
 cv::Mat LaneProcessor::getROI(const cv::Mat& image) const
 {
     cv::Mat output;
     // Multiply the edges image and the mask to get the output
     cv::bitwise_and(image, m_FrameMask, output);
+    {
+        std::stringstream ss;
+        ss << "/home/rtrk/Desktop/cannyEdge" << ++glob << ".jpg";
+        cv::imwrite(ss.str(), output);
+    }
+    
     return output;
 }
 
@@ -272,7 +279,6 @@ void LaneProcessor::plotLane(cv::Mat& image, const std::vector<cv::Point>& laneP
 
 LaneProcessor::LaneProcessor() : 
     m_LeftFlag{false}, m_RightFlag{false}
-    //m_Coordinates{std::vector<std::vector<int>>(4)}
 {   
     //for specific  video
     m_RefDot = cv::Point(539, 445); 

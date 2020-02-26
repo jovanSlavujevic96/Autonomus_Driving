@@ -11,7 +11,7 @@
 
 int main(int argc, char **argv)
 {
-    std::string VideoPath = "/home/rtrk/Videos/testVideos/LimitTest3.mp4";
+    std::string VideoPath = "/home/rtrk/Videos/testVideos/LimitTest2.mp4";
     if(argc >= 2)
     {
         VideoPath = std::string("/home/rtrk/Videos/testVideos/") + std::string(argv[1]);
@@ -30,6 +30,8 @@ int main(int argc, char **argv)
     int state = play;
     cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
     sensor_msgs::Image img1;
+
+    int incr=0;
     while(cap.isOpened() )
     {
         cv::Mat frame;
@@ -58,7 +60,10 @@ int main(int argc, char **argv)
         frame = cv_bridge::toCvCopy(img1, "bgr8")->image;
 		//cv::resize(frame, frame, cv::Size(std::round(frame.cols*0.6), std::round(frame.rows*0.6)));
         cv::imshow("video stream", frame );
-        
+
+        std::stringstream ss;
+        ss << "/home/rtrk/Desktop/linije/" << ++incr << ".jpg";
+        cv::imwrite(ss.str(), frame);
 
         auto btn = cv::waitKey(state);
         if(btn == 27 || btn == 'q' || btn == 'Q') break;

@@ -12,6 +12,8 @@
 
 #define blue cv::Scalar(255,0,0)
 
+static bool deleteFile = false;
+
 namespace jovan //help functions
 {
 
@@ -48,6 +50,7 @@ namespace jovan //help functions
 
 cv::Mat LimitProcessor::saveThenLoad(const cv::Mat& image)
 {
+    deleteFile = true;
     cv::imwrite("tmp.png", image);
     return (cv::imread("tmp.png"));
 }
@@ -325,7 +328,7 @@ std::vector<cv::Mat> LimitProcessor::getTextImagesForOCR(const cv::Mat& image, c
         FINAL = LimitProcessor::saveThenLoad(image(contours[i]));
         FINAL = FINAL(CONTOURS[0]);
         FINAL = FINAL(cv::Rect(cv::Point(std::round(FINAL.cols*resizeOCRfactor), std::round(FINAL.rows*resizeOCRfactor)), 
-            cv::Point(std::round(FINAL.cols*(1-resizeOCRfactor)), std::round(FINAL.rows*(1-resizeOCRfactor)) ) ));  
+            cv::Point(std::round(FINAL.cols*(1-resizeOCRfactor)), std::round(FINAL.rows*(1-resizeOCRfactor)) ) ));
         images[i] = FINAL.clone();
     }
     return images;
@@ -436,7 +439,6 @@ std::vector<int> LimitProcessor::getOCR(std::vector<cv::Mat>& images, std::vecto
         }
         digits.push_back(value);
     }
-
     return digits;
 }
 
@@ -511,7 +513,10 @@ LimitProcessor::LimitProcessor()  :
 
 LimitProcessor::~LimitProcessor() 
 {
-    system("rm \"tmp.png\"");   //remove help png file
+    if(deleteFile)
+    {
+        system("rm \"tmp.png\"");   //remove help png file
+    }
 }
 
 void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
@@ -548,7 +553,7 @@ void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
         }
     }
     LimitProcessor::setCoordinates(contours);
-    //LimitProcessor::drawLocations(m_Frame, contours); 
+    LimitProcessor::drawLocations(m_Frame, contours); 
 }
 
 sensor_msgs::Image LimitProcessor::getProcessedFrame(void) const
