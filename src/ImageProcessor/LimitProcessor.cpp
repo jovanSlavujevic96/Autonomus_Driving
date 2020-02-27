@@ -553,7 +553,7 @@ void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
         }
     }
     LimitProcessor::setCoordinates(contours);
-    LimitProcessor::drawLocations(m_Frame, contours); 
+    //LimitProcessor::drawLocations(m_Frame, contours); 
 }
 
 sensor_msgs::Image LimitProcessor::getProcessedFrame(void) const

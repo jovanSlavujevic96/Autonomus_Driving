@@ -7,6 +7,8 @@ class LogVisualizer :
     public IVisualizer
 {
     int m_FrameWidth, m_FrameHeight;
+    cv::Rect m_WhiteRegion;
+    cv::Point m_MovementPoint, m_LimitPoint;
 
     void assignParameters(const cv::Mat &frame);
 public:

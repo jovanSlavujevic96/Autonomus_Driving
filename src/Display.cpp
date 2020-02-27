@@ -26,7 +26,8 @@ void Display::resetVariables(void)
     {
         rcv.second = false;
     }
-    m_FrameRecevied = false;
+    m_FrameReceived = false;
+    m_LogReceived = false;
 }
 
 bool Display::pauseCheck(void)
@@ -52,13 +53,6 @@ void Display::assignStringAndPoints(std::vector<std::string>& text, std::vector<
     text.clear();
     pts.clear();
 
-    if(topic == LogFromECU) 
-    {
-        text.push_back(m_ECULog.movement);
-        text.push_back(m_ECULog.speed_limit);
-        return;
-    }
-
     switch(topic)
     {
         case Coord_StopDet:
@@ -71,6 +65,12 @@ void Display::assignStringAndPoints(std::vector<std::string>& text, std::vector<
             text.push_back(m_ECULog.speed_limit);
             break;
         }
+        case LogFromECU:
+        {
+            text.push_back(m_ECULog.movement);
+            text.push_back(m_ECULog.speed_limit);
+            return;
+        }
     }
     pts = m_Points[topic];
     m_Points[topic].clear();
@@ -78,10 +78,13 @@ void Display::assignStringAndPoints(std::vector<std::string>& text, std::vector<
 
 Display::Display() : 
     m_PauseSender{std::make_unique<DataSender<std_msgs::Bool>>(PauseOrPlay)},
-    m_ImHere{std::make_unique<DataSender<std_msgs::Bool>>(ImHere_Visual)}
+    m_ImHere{std::make_unique<DataSender<std_msgs::Bool>>(ImHere_Visual)},
+    m_LogVisualizer{std::make_unique<LogVisualizer>() }
 {
     this->m_Pause = false;
-    this->m_FrameRecevied = false;
+    this->m_FrameReceived = false;
+    this->m_LogReceived = false;
+    //this->m_SpacePressed = false;
 
     m_ECULog.speed_limit = "NaN";
     m_ECULog.movement = "NaN";
@@ -109,8 +112,14 @@ bool Display::doStuff(void)
         msg.data = true;
         m_ImHere->Publish(msg);
     }
-    if(m_FrameRecevied && Display::calculateRecievement() )
+    if(m_FrameReceived && m_LogReceived && Display::calculateRecievement() )
     {
+        if(!m_Pause)
+        {
+            std_msgs::Bool msg;
+            msg.data = false;
+            m_PauseSender->Publish(msg);
+        }
         Frame frame;
         frame.MatFrame = &m_Frame;
         for(auto& visualizer : m_Visualizers)
@@ -118,6 +127,8 @@ bool Display::doStuff(void)
             Display::assignStringAndPoints(frame.Text, frame.Dots, visualizer.first);
             visualizer.second->draw(&frame);
         }
+        Display::assignStringAndPoints(frame.Text, frame.Dots, LogFromECU);
+        m_LogVisualizer->draw(&frame);
         try
         { 
             cv::imshow("Visualization: ", m_Frame);
@@ -133,16 +144,21 @@ bool Display::doStuff(void)
 
 void Display::update(const sensor_msgs::Image& msg, const Topic subjTopic) 
 {
-    if(!m_FrameRecevied && subjTopic == RawFrame)
+    if(!m_FrameReceived && subjTopic == RawFrame)
     {
-        m_FrameRecevied = true;
+        m_FrameReceived = true;
         m_Frame = cv_bridge::toCvCopy(msg, "bgr8")->image.clone();
+        if(!m_Pause)
+        {
+            std_msgs::Bool msg;
+            msg.data = true;
+            m_PauseSender->Publish(msg);
+        }
     }
 }
 
 void Display::update(const bachelor::Coordinates& msg, const Topic subjTopic)
 {
-    std::cout << "msg size: " << (int)msg.size << std::endl;
     for(auto i=0; i<msg.size; ++i)
     {
         m_Points[subjTopic].push_back({cv::Point( (msg.X1[i]), (msg.Y1[i]) ), cv::Point( (msg.X2[i]), (msg.Y2[i]) )} );
@@ -155,6 +171,6 @@ void Display::update(const bachelor::Log& msg, const Topic subjTopic)
     if(subjTopic == LogFromECU)
     {
         m_ECULog = msg;
+        m_LogReceived = true;
     }
-    m_Recievement[subjTopic] = true;
 }

@@ -36,7 +36,6 @@ void ObjectVisualizer::draw(Frame* frame)
         auto pt = cv::Point( rect.x+1, rect.width+rect.y+18 );
         cv::putText(*frame->MatFrame, (m_SignName+frame->Text[0]), pt, cv::FONT_HERSHEY_DUPLEX, 0.7f, m_TextColor, 1);
     }
-    std::cout << "DRAW\n";
 }
 
 VisualizerType ObjectVisualizer::getVisualizerType(void)

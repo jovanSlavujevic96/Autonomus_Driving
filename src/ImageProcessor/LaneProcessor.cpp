@@ -47,18 +47,11 @@ void LaneProcessor::createMask(const cv::Mat& image)
     m_FrameMask = mask.clone(); //return
 }
 
-int glob=0;
 cv::Mat LaneProcessor::getROI(const cv::Mat& image) const
 {
     cv::Mat output;
     // Multiply the edges image and the mask to get the output
-    cv::bitwise_and(image, m_FrameMask, output);
-    {
-        std::stringstream ss;
-        ss << "/home/rtrk/Desktop/cannyEdge" << ++glob << ".jpg";
-        cv::imwrite(ss.str(), output);
-    }
-    
+    cv::bitwise_and(image, m_FrameMask, output);    
     return output;
 }
 
@@ -306,7 +299,7 @@ void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
     auto separatedLines = LaneProcessor::lineSeparation(helpImage, lines);
     auto regression = LaneProcessor::regression(helpImage, separatedLines);
     LaneProcessor::setCoordinates(regression, percentage);
-    LaneProcessor::plotLane(m_Frame, regression, percentage);
+    //LaneProcessor::plotLane(m_Frame, regression, percentage);
 }
 
 sensor_msgs::Image LaneProcessor::getProcessedFrame(void) const

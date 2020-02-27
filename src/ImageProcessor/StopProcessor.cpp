@@ -258,7 +258,6 @@ void StopProcessor::setFrame(const sensor_msgs::Image &Frame)
     auto images = StopProcessor::getTextImagesForOCR(numOfResizing, contours);
     auto detection = StopProcessor::getDetectionPerRectFromOCR(images);
     StopProcessor::setCoordinates(detection, contours);
-        
     //StopProcessor::drawLocations(m_Frame, detection, contours);
 }
 

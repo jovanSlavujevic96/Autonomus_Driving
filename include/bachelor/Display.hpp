@@ -19,13 +19,14 @@ class Display :
     public IObserver<bachelor::Log>
 {
     std::unique_ptr<IDataSender<std_msgs::Bool>> m_PauseSender, m_ImHere;
+    std::unique_ptr<IVisualizer> m_LogVisualizer;
 
     std::map<Topic, IVisualizer*> m_Visualizers;
     std::map<Topic, bool> m_Recievement;
     std::map<Topic, std::vector<std::vector<cv::Point>>> m_Points;
     
     cv::Mat m_Frame;
-    bool m_Pause, m_FrameRecevied;
+    bool m_Pause, m_FrameReceived, m_LogReceived;
     bachelor::Log m_ECULog;
 
     bool calculateRecievement(void);
