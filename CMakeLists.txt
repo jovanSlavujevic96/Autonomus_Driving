@@ -114,7 +114,8 @@ add_library(_DetectorLib
 add_library(_ImageProcessorLib
   src/ImageProcessor/StopProcessor.cpp  
   src/ImageProcessor/LimitProcessor.cpp  
-  src/ImageProcessor/LaneProcessor.cpp  
+  src/ImageProcessor/LaneProcessor.cpp
+  src/CameraCalibration.cc  
 )
 ######################## LaneDetector_Node
 add_executable(LaneDetector_Node node/detector_cluster/LaneDetectorNode.cpp ) 

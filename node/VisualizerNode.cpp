@@ -54,6 +54,9 @@ int main(int argc, char **argv)
             }
         }
     }
+    std::unique_ptr<IVisualizer> LogViz = std::make_unique<LogVisualizer>();
+    display.addVisualizer(LogViz.get(), LogFromECU);
+
     std::unique_ptr<IDataReceiver<sensor_msgs::Image>> framesRcv = std::make_unique<DataReceiver<sensor_msgs::Image>>(RawFrame);
     framesRcv->registerObserver(&display);
 

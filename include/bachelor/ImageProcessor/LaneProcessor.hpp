@@ -3,7 +3,7 @@
 
 #include "IImageProcessor.hpp"
 
-#include <opencv2/opencv.hpp>
+#include <bachelor/CameraCalibration.h>
 
 class LaneProcessor : 
     public IImageProcessor
@@ -11,7 +11,8 @@ class LaneProcessor :
 private:
     cv::Mat m_Frame, m_FrameMask;
     bool m_LeftFlag, m_RightFlag;
-    cv::Point m_RefDot, m_MeasuredDot;
+    const CameraCalibration m_CameraCalibration;
+    cv::Point m_MeasuredDot;
     std::vector<std::vector<int>> m_Coordinates;
 
     void resize(cv::Mat& image, const float resizeFactor);
@@ -27,7 +28,7 @@ private:
     void plotLane(cv::Mat& image, const std::vector<cv::Point>& lanePts, const float resizeFactor);
 
 public:
-    LaneProcessor();
+    LaneProcessor(const CameraCalibration& camCal);
     virtual ~LaneProcessor() = default;
 
     void setFrame(const sensor_msgs::Image& Frame) override;

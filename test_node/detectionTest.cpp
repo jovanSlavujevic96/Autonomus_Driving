@@ -17,7 +17,7 @@ int main(int argc, char **argv)
         VideoPath = std::string("/home/rtrk/Videos/testVideos/") + std::string(argv[1]);
     }
 
-    LaneProcessor lane;
+    LaneProcessor lane(CamCalSolution1);
     LimitProcessor speed;
     StopProcessor stop;
 

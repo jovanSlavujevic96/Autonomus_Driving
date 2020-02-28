@@ -6,7 +6,7 @@ int main(int argc, char **argv)
 	const std::string nodeName = "LaneDetector_Node";
 	ros::init(argc, argv, nodeName);
 
-	DetectorNode detector(std::make_unique<LaneProcessor>() );	
+	DetectorNode detector( std::make_unique<LaneProcessor>(CamCalSolution1) );	
     std::cout << nodeName << " successfully initialized." << std::endl;
 
 	detector.runProgram();

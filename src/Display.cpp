@@ -4,10 +4,6 @@
 #include <bachelor/Frame.h>
 #include <bachelor/Visualizer/LogVisualizer.hpp>
 
-#define Red cv::Scalar(0,0,255)
-#define Yellow cv::Scalar(0, 255, 255)
-#define Lilac cv::Scalar(255,0,255)
-
 bool Display::calculateRecievement(void)
 {
     for(auto const& rcv : m_Recievement)
@@ -26,8 +22,6 @@ void Display::resetVariables(void)
     {
         rcv.second = false;
     }
-    m_FrameReceived = false;
-    m_LogReceived = false;
 }
 
 bool Display::pauseCheck(void)
@@ -76,18 +70,54 @@ void Display::assignStringAndPoints(std::vector<std::string>& text, std::vector<
     m_Points[topic].clear();
 }
 
+bool Display::drawAndDisplay(void)
+{
+    if(Display::calculateRecievement() && !m_Frame.empty() )
+    {
+        if(!m_Pause)
+        {
+            std_msgs::Bool msg;
+            msg.data = false;
+            m_PauseSender->Publish(msg);
+        }
+        Frame frame;
+        frame.MatFrame = &m_Frame;
+        for(auto& visualizer : m_Visualizers)
+        {
+            if(visualizer.first == LogFromECU)
+            {
+                continue;
+            }
+            Display::assignStringAndPoints(frame.Text, frame.Dots, visualizer.first);
+            visualizer.second->draw(&frame);
+        }
+        //it must be the last one
+        if(m_Visualizers[LogFromECU] != NULL)
+        {
+            Display::assignStringAndPoints(frame.Text, frame.Dots, LogFromECU);
+            m_Visualizers[LogFromECU]->draw(&frame);
+        }
+        try
+        { 
+            cv::imshow("Visualization: ", m_Frame);
+        }
+        catch(cv::Exception &error)
+        {
+            return false;
+        }
+        Display::resetVariables();
+    }
+    return Display::pauseCheck();	//if exit button (<esc> or 'q') is pressed exit the program
+}
+
 Display::Display() : 
     m_PauseSender{std::make_unique<DataSender<std_msgs::Bool>>(PauseOrPlay)},
-    m_ImHere{std::make_unique<DataSender<std_msgs::Bool>>(ImHere_Visual)},
-    m_LogVisualizer{std::make_unique<LogVisualizer>() }
+    m_ImHere{std::make_unique<DataSender<std_msgs::Bool>>(ImHere_Visual)}
 {
     this->m_Pause = false;
-    this->m_FrameReceived = false;
-    this->m_LogReceived = false;
-    //this->m_SpacePressed = false;
 
-    m_ECULog.speed_limit = "NaN";
-    m_ECULog.movement = "NaN";
+    this->m_ECULog.speed_limit = "NaN";
+    this->m_ECULog.movement = "NaN";
 }
 
 void Display::addVisualizer(IVisualizer* visualizer, const Topic subjTopic)
@@ -112,41 +142,13 @@ bool Display::doStuff(void)
         msg.data = true;
         m_ImHere->Publish(msg);
     }
-    if(m_FrameReceived && m_LogReceived && Display::calculateRecievement() )
-    {
-        if(!m_Pause)
-        {
-            std_msgs::Bool msg;
-            msg.data = false;
-            m_PauseSender->Publish(msg);
-        }
-        Frame frame;
-        frame.MatFrame = &m_Frame;
-        for(auto& visualizer : m_Visualizers)
-        {
-            Display::assignStringAndPoints(frame.Text, frame.Dots, visualizer.first);
-            visualizer.second->draw(&frame);
-        }
-        Display::assignStringAndPoints(frame.Text, frame.Dots, LogFromECU);
-        m_LogVisualizer->draw(&frame);
-        try
-        { 
-            cv::imshow("Visualization: ", m_Frame);
-        }
-        catch(cv::Exception &error)
-        {
-            return false;
-        }
-        Display::resetVariables();
-    }
-    return Display::pauseCheck();	//if exit button (<esc> or 'q') is pressed exit the program
+    return Display::drawAndDisplay();	//if exit button (<esc> or 'q') is pressed exit the program
 }
 
 void Display::update(const sensor_msgs::Image& msg, const Topic subjTopic) 
 {
-    if(!m_FrameReceived && subjTopic == RawFrame)
+    if(subjTopic == RawFrame)
     {
-        m_FrameReceived = true;
         m_Frame = cv_bridge::toCvCopy(msg, "bgr8")->image.clone();
         if(!m_Pause)
         {
@@ -155,6 +157,7 @@ void Display::update(const sensor_msgs::Image& msg, const Topic subjTopic)
             m_PauseSender->Publish(msg);
         }
     }
+    m_Recievement[subjTopic] = true;
 }
 
 void Display::update(const bachelor::Coordinates& msg, const Topic subjTopic)
@@ -171,6 +174,6 @@ void Display::update(const bachelor::Log& msg, const Topic subjTopic)
     if(subjTopic == LogFromECU)
     {
         m_ECULog = msg;
-        m_LogReceived = true;
     }
+    m_Recievement[subjTopic] = true;
 }

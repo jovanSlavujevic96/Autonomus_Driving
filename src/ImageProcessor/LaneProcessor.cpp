@@ -1,6 +1,7 @@
 #include <bachelor/ImageProcessor/LaneProcessor.hpp>
 #include <cv_bridge/cv_bridge.h> 
 
+#define blue cv::Scalar(255, 0, 0)
 #define threshold 5
 
 void LaneProcessor::resize(cv::Mat& image, const float resizeFactor)
@@ -27,22 +28,16 @@ cv::Mat LaneProcessor::edges(const cv::Mat& image) const
 void LaneProcessor::createMask(const cv::Mat& image)
 {
     cv::Mat mask = cv::Mat::zeros(image.size(), image.type());
-
-    //for specific video
-    const int x0 = 290, y0 = 555;
-    const int x1 = 895, y1 = y0;
-    const int x2 = 615, y2 = 445;
-    const int x3 = 465, y3 = y2;
   
     cv::Point pts[4] = 
     {
-        cv::Point(x0,y0), //cv::Point(210, 720),
-        cv::Point(x1,y1), //cv::Point(550, 450),
-        cv::Point(x2,y2), //cv::Point(717, 450),
-        cv::Point(x3,y3) //cv::Point(1280, 720)
+        m_CameraCalibration.pt_BotomLeft,
+        m_CameraCalibration.pt_BotomRight,
+        m_CameraCalibration.pt_TopRight,
+        m_CameraCalibration.pt_TopLeft
     };
     // Create a binary polygon mask
-    cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
+    cv::fillConvexPoly(mask, pts, 4, blue);
 
     m_FrameMask = mask.clone(); //return
 }
@@ -175,7 +170,7 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std
     int ini_y = image.rows;
     
     //for specific video
-    int fin_y = 445;
+    int fin_y = m_CameraCalibration.pt_RefDot.y;
 
     double right_ini_x = ((ini_y - rightB.y) / rightM) + rightB.x;
     double right_fin_x = ((fin_y - rightB.y) / rightM) + rightB.x;
@@ -229,8 +224,8 @@ void LaneProcessor::setCoordinates(std::vector<cv::Point>& lanePts, const float 
         m_Coordinates.push_back({(int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y+30)/resizeFactor), 
             (int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y-30)/resizeFactor)});
 
-        m_Coordinates.push_back({(int)std::round(m_RefDot.x/resizeFactor), (int)std::round((m_RefDot.y+15)/resizeFactor), 
-            (int)std::round(m_RefDot.x/resizeFactor), (int)std::round((m_RefDot.y-15)/resizeFactor) });
+        m_Coordinates.push_back({(int)std::round(m_CameraCalibration.pt_RefDot.x/resizeFactor), (int)std::round((m_CameraCalibration.pt_RefDot.y+15)/resizeFactor), 
+            (int)std::round(m_CameraCalibration.pt_RefDot.x/resizeFactor), (int)std::round((m_CameraCalibration.pt_RefDot.y-15)/resizeFactor) });
     }
     else
     {
@@ -253,8 +248,8 @@ void LaneProcessor::plotLane(cv::Mat& image, const std::vector<cv::Point>& laneP
     {
         cv::line(image, cv::Point( std::round(m_MeasuredDot.x/resizeFactor), std::round((m_MeasuredDot.y+30)/resizeFactor) ), 
             cv::Point( std::round(m_MeasuredDot.x/resizeFactor), std::round((m_MeasuredDot.y-30)/resizeFactor) ), cv::Scalar(0, 255, 255), 3, CV_AA); //measuredDot (Line)
-        cv::line(image, cv::Point( std::round(m_RefDot.x/resizeFactor), std::round((m_RefDot.y+15)/resizeFactor) ), 
-            cv::Point( std::round(m_RefDot.x/resizeFactor), std::round((m_RefDot.y-15)/resizeFactor) ), cv::Scalar(0, 0, 255), 3, CV_AA); //referent Dot (line)
+        cv::line(image, cv::Point( std::round(m_CameraCalibration.pt_RefDot.x/resizeFactor), std::round((m_CameraCalibration.pt_RefDot.y+15)/resizeFactor) ), 
+            cv::Point( std::round(m_CameraCalibration.pt_RefDot.x/resizeFactor), std::round((m_CameraCalibration.pt_RefDot.y-15)/resizeFactor) ), cv::Scalar(0, 0, 255), 3, CV_AA); //referent Dot (line)
 
         cv::Mat tmp = image.clone();
         std::vector<cv::Point> poly_points(4);
@@ -270,11 +265,11 @@ void LaneProcessor::plotLane(cv::Mat& image, const std::vector<cv::Point>& laneP
         cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);  //print advised direction of driving 
 }
 
-LaneProcessor::LaneProcessor() : 
+LaneProcessor::LaneProcessor(const CameraCalibration& camCal) : 
+    m_CameraCalibration{camCal},
     m_LeftFlag{false}, m_RightFlag{false}
 {   
     //for specific  video
-    m_RefDot = cv::Point(539, 445); 
 }
 
 void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
@@ -286,8 +281,7 @@ void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
     
     m_Frame = cv_bridge::toCvCopy(frame, "bgr8")->image.clone();
     auto helpImage = m_Frame.clone();
-    const float percentage = 0.6f;
-    LaneProcessor::resize(helpImage, percentage);
+    LaneProcessor::resize(helpImage, m_CameraCalibration.resizePercentage);
     cv::Mat forProcess = LaneProcessor::deNoise(helpImage);
     forProcess = LaneProcessor::edges(forProcess);
     if(m_FrameMask.empty() )
@@ -298,8 +292,8 @@ void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
     auto lines = LaneProcessor::houghLines(forProcess);
     auto separatedLines = LaneProcessor::lineSeparation(helpImage, lines);
     auto regression = LaneProcessor::regression(helpImage, separatedLines);
-    LaneProcessor::setCoordinates(regression, percentage);
-    //LaneProcessor::plotLane(m_Frame, regression, percentage);
+    LaneProcessor::setCoordinates(regression, m_CameraCalibration.resizePercentage);
+    //LaneProcessor::plotLane(m_Frame, regression, m_CameraCalibration.resizePercentage);
 }
 
 sensor_msgs::Image LaneProcessor::getProcessedFrame(void) const
@@ -320,15 +314,16 @@ std::string LaneProcessor::getResult(void) const
     {
         return "Changing the Lane";
     }
-    if( m_RefDot.x - m_MeasuredDot.x >= threshold )    //its going right
+
+    if(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x >= threshold )    //its going right
     {
         return "Turn Left";
     }
-    else if( m_RefDot.x - m_MeasuredDot.x <= (0-threshold) ) //its going left
+    else if(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x <= (0-threshold) ) //its going left
     {
         return "Turn Right";
     }
-    else if( std::abs(m_RefDot.x - m_MeasuredDot.x) < threshold )  
+    else if(std::abs(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x) < threshold )  
     {
         return "Go Straight";
     }
