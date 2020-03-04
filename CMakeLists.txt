@@ -225,18 +225,19 @@ add_dependencies(ECU_Node
 
 #################################################
 
-add_executable(detTest test_node/detectionTest.cpp ) 
+add_executable(detTest help_programs/detectionTest.cpp ) 
 
 target_link_libraries(detTest 
   _DetectorLib
   _ImageProcessorLib
+  _VisualizerLib
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES}
 )
 
-add_executable(circleDet test_node/circleDet.cpp ) 
+add_executable(saveVideo help_programs/saveVideo.cpp ) 
 
-target_link_libraries(circleDet 
+target_link_libraries(saveVideo 
   ${OpenCV_LIBS} 
   ${catkin_LIBRARIES}
 )
@@ -273,6 +274,18 @@ roslaunch_add_file_check(launch)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  add_rostest_gmock(DisplayTest test_launch/DisplayTest.test test/DisplayTest.cpp)
+  target_link_libraries(DisplayTest _DisplayLib ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+  add_rostest_gtest(ObjectVisualizerTest test_launch/Visualizer/ObjectVisualizerTest.test test/Visualizer/ObjectVisualizerTest.cpp)
+  target_link_libraries(ObjectVisualizerTest _VisualizerLib ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+  add_rostest_gtest(LaneVisualizerTest test_launch/Visualizer/LaneVisualizerTest.test test/Visualizer/LaneVisualizerTest.cpp)
+  target_link_libraries(LaneVisualizerTest _VisualizerLib _DataProtocolLib ${OpenCV_LIBS} ${catkin_LIBRARIES})
+endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

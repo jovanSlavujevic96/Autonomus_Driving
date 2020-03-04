@@ -26,17 +26,22 @@ LogVisualizer::LogVisualizer()
     this->m_FrameHeight = 0;
 }
 
-void LogVisualizer::draw(Frame* frame)
+bool LogVisualizer::draw(Frame& frame)
 {
-    LogVisualizer::assignParameters(*frame->MatFrame);
+    if((*frame.Text).empty() || frame.MatFrame->empty() )
+    {
+        return false;
+    }
+    LogVisualizer::assignParameters(*frame.MatFrame);
     //fill white
-    cv::rectangle(*frame->MatFrame, m_WhiteRegion, white, -1);
+    cv::rectangle(*frame.MatFrame, m_WhiteRegion, white, -1);
     //print
-    cv::putText(*frame->MatFrame, ("Movement: " + frame->Text[0]), m_MovementPoint, font, 2, black, 1, CV_AA);
-    cv::putText(*frame->MatFrame, ("Limit value: " + frame->Text[1]), m_LimitPoint, font, 2, black, 1, CV_AA);    
+    cv::putText(*frame.MatFrame, ("Movement: " + (*frame.Text)[0]), m_MovementPoint, font, 2, black, 1, CV_AA);
+    cv::putText(*frame.MatFrame, ("Limit value: " + (*frame.Text)[1]), m_LimitPoint, font, 2, black, 1, CV_AA);
+    return true;
 }
 
-VisualizerType LogVisualizer::getVisualizerType(void)
+VisualizerType LogVisualizer::getVisualizerType(void) const
 {
     return LogVizType;
 }

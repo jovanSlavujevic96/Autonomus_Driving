@@ -13,8 +13,8 @@ public:
     LaneVisualizer();
     virtual ~LaneVisualizer() = default;
 
-    void draw(Frame* frame) override;
-    VisualizerType getVisualizerType(void) override;
+    bool draw(Frame& frame) override;
+    VisualizerType getVisualizerType(void) const override;
 };
 
 #endif //BACHELOR_VISUALIZER_LANEVISUALIZER_HPP_

@@ -6,7 +6,7 @@
 struct CameraCalibration
 {
     const float resizePercentage;
-    const cv::Size size;
+    const cv::Size originalSize, size = cv::Size(originalSize.width*resizePercentage, originalSize.height*resizePercentage);
     const int type;
     const cv::Point pt_BotomLeft, pt_BotomRight, pt_TopLeft, pt_TopRight;
     const cv::Point pt_RefDot;

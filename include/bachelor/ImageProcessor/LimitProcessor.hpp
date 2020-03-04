@@ -17,6 +17,7 @@ private:
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
     std::vector<std::vector<int>> m_Coordinates;
     int m_LimitValue;
+    static bool m_DeleteFile;
 
     cv::Mat saveThenLoad(const cv::Mat& image);
     void loadCascade(cv::CascadeClassifier* cascade, const int size, const std::string* path);

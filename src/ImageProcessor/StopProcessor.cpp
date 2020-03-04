@@ -148,6 +148,7 @@ std::vector<bool> StopProcessor::getDetectionPerRectFromOCR(const std::vector<cv
     int i=0;
     for(auto image : images)
     {
+        detection[i] = false;
         std::string word;
         m_OCR->run(image, word, NULL, NULL, NULL, cv::text::OCR_LEVEL_WORD );
         
@@ -155,38 +156,31 @@ std::vector<bool> StopProcessor::getDetectionPerRectFromOCR(const std::vector<cv
         int incr = 0;
         for(auto letter : word)
         {
-            if(letter == 's' || letter == 'S' || letter == '$')
+            if( (letter == 's' || letter == 'S' || letter == '$') && !STOP[0])
             {
                 STOP[0] = true;
                 ++incr;  
             }
-            if(letter == 't' || letter == 'T')
+            if( (letter == 't' || letter == 'T') && !STOP[1] )
             {
                 STOP[1] = true;
                 ++incr; 
             }
-            if(letter == 'o' || letter == 'O' || letter == '0')
+            if( (letter == 'o' || letter == 'O' || letter == '0') && !STOP[2])
             {
                 STOP[2] = true;
                 ++incr;
             }
-            if(letter == 'p' || letter == 'P')
+            if( (letter == 'p' || letter == 'P') && !STOP[3])
             {
                 STOP[3] = true;
                 ++incr;
             }
             if(incr >= 2) 
             {
+                detection[i] = true;
                 break;
             }  
-        }
-        if(incr >= 2)
-        {
-            detection[i] = true;
-        }
-        else
-        {
-            detection[i] = false;   
         }
         ++i;
     }
@@ -258,7 +252,8 @@ void StopProcessor::setFrame(const sensor_msgs::Image &Frame)
     auto images = StopProcessor::getTextImagesForOCR(numOfResizing, contours);
     auto detection = StopProcessor::getDetectionPerRectFromOCR(images);
     StopProcessor::setCoordinates(detection, contours);
-    //StopProcessor::drawLocations(m_Frame, detection, contours);
+    
+    StopProcessor::drawLocations(m_Frame, detection, contours);
 }
 
 sensor_msgs::Image StopProcessor::getProcessedFrame(void) const

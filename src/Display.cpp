@@ -88,14 +88,14 @@ bool Display::drawAndDisplay(void)
             {
                 continue;
             }
-            Display::assignStringAndPoints(frame.Text, frame.Dots, visualizer.first);
-            visualizer.second->draw(&frame);
+            Display::assignStringAndPoints(*frame.Text, *frame.Dots, visualizer.first);
+            visualizer.second->draw(frame);
         }
         //it must be the last one
         if(m_Visualizers[LogFromECU] != NULL)
         {
-            Display::assignStringAndPoints(frame.Text, frame.Dots, LogFromECU);
-            m_Visualizers[LogFromECU]->draw(&frame);
+            Display::assignStringAndPoints(*frame.Text, *frame.Dots, LogFromECU);
+            m_Visualizers[LogFromECU]->draw(frame);
         }
         try
         { 

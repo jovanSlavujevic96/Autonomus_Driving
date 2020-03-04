@@ -14,8 +14,8 @@ public:
     ObjectVisualizer(VisualizerType type);
     virtual ~ObjectVisualizer() = default;
 
-    void draw(Frame* frame) override;
-    VisualizerType getVisualizerType(void) override;
+    bool draw(Frame& frame) override;
+    VisualizerType getVisualizerType(void) const override;
 };
 
 #endif //BACHELOR_VISUALIZER_OBJECTVISUALIZER_HPP_

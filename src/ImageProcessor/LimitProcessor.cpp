@@ -12,45 +12,11 @@
 
 #define blue cv::Scalar(255,0,0)
 
-static bool deleteFile = false;
-
-namespace jovan //help functions
-{
-
-    static cv::Scalar HSVtoRGB(int H, double S, double V) 
-    {
-        double C = S * V;
-        double X = C * (1 - std::abs(std::fmod(H / 60.0, 2) - 1));
-        double m = V - C;
-        double Rs, Gs, Bs;
-
-        if(H >= 0 && H < 60) {
-            Rs = C;
-            Gs = X;
-            Bs = 0;	
-        }
-        else if(H >= 60 && H < 120) {	
-            Rs = X;
-            Gs = C;
-            Bs = 0;	
-        }
-        else if(H >= 120 && H < 180) {
-            Rs = 0;
-            Gs = C;
-            Bs = X;	
-        }
-        else if(H >= 180 && H < 240) {
-            Rs = 0;
-            Gs = X;
-            Bs = C;	
-        }
-        return cv::Scalar((Bs + m)*255, (Gs + m)*255, (Rs + m)*255);
-    }
-};
+bool LimitProcessor::m_DeleteFile = false;
 
 cv::Mat LimitProcessor::saveThenLoad(const cv::Mat& image)
 {
-    deleteFile = true;
+    LimitProcessor::m_DeleteFile = true;
     cv::imwrite("tmp.png", image);
     return (cv::imread("tmp.png"));
 }
@@ -182,17 +148,12 @@ void LimitProcessor::increaseRectsForClassification(const cv::Mat& frame, std::v
     for(int i=0; i<contours.size(); ++i)
     {
         auto *contour = &contours[i];
-        float factor = 0.33f;
-        int dimension;
+        int dimension = contour->height;
         if(contour->width < contour->height)
         {
             dimension = contour->width;
         }
-        else
-        {
-            dimension = contour->height;
-        }
-        int limit = std::round(dimension*factor);
+        int limit = std::round(dimension*0.33f);
 
         for(int incrVal = limit; incrVal >= 1; --incrVal)
         {
@@ -228,7 +189,6 @@ std::vector<cv::Rect> LimitProcessor::getDetectedLimitContours(const cv::Mat& fr
                 break;
             }
         }
-        
 	}
     return speedRects;
 }
@@ -311,7 +271,6 @@ std::vector<cv::Mat> LimitProcessor::getTextImagesForOCR(const cv::Mat& image, c
     std::vector<cv::Mat> images(contours.size() );
 
     cv::Mat binaryMaskCrop, approxCircle, FINAL;
-    const float factor = 0.2f;
     cv::Mat1b mask;
     std::vector<cv::Rect> CONTOURS;
 
@@ -513,7 +472,7 @@ LimitProcessor::LimitProcessor()  :
 
 LimitProcessor::~LimitProcessor() 
 {
-    if(deleteFile)
+    if(LimitProcessor::m_DeleteFile)
     {
         system("rm \"tmp.png\"");   //remove help png file
     }
@@ -529,31 +488,30 @@ void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
         auto helpImage = m_Frame.clone();
         LimitProcessor::resize(helpImage, resizeFrameFactor);
         
-        if(m_ImageMask.empty() )
+        if(m_ImageMask.empty() == true)
         {
             LimitProcessor::createROImask(helpImage);
         }
         auto imageROI = LimitProcessor::getROIframe(helpImage);
-        
         LimitProcessor::redColorSegmentationMask(imageROI, redHueImage);
         contours =  LimitProcessor::getRedContours(redHueImage);
         LimitProcessor::increaseRectsForClassification(helpImage, contours);
         contours = LimitProcessor::getDetectedLimitContours(helpImage, contours);
     }
-    if(contours.size() )
+    if(contours.size() > 0)
     {
         LimitProcessor::resize(redHueImage, (1/resizeFrameFactor) );   //increase size of image
         LimitProcessor::resize(contours, (1/resizeFrameFactor) );    //increase size of rectangles
 
         auto images = LimitProcessor::getTextImagesForOCR(m_Frame, redHueImage, contours);
         std::vector<int> numbers = LimitProcessor::getOCR(images, contours);
-        if(numbers.size() )
+        if(numbers.size() > 0)
         {
             m_LimitValue = LimitProcessor::getMode(numbers);
         }
     }
     LimitProcessor::setCoordinates(contours);
-    //LimitProcessor::drawLocations(m_Frame, contours); 
+    LimitProcessor::drawLocations(m_Frame, contours); 
 }
 
 sensor_msgs::Image LimitProcessor::getProcessedFrame(void) const
@@ -569,7 +527,7 @@ sensor_msgs::Image LimitProcessor::getProcessedFrame(void) const
 
 std::string LimitProcessor::getResult(void) const
 {
-    if(m_LimitValue)
+    if(m_LimitValue > 0)
     {
         return std::to_string(m_LimitValue);
     }

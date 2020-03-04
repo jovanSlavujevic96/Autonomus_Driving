@@ -17,7 +17,8 @@ private:
 
     void resize(cv::Mat& image, const float resizeFactor);
     cv::Mat deNoise(const cv::Mat& image) const;
-    cv::Mat edges(const cv::Mat& image) const;
+    cv::Mat1b edges(const cv::Mat& image) const;
+    cv::Mat1b colorSegmentation(const cv::Mat& image) const;
     void createMask(const cv::Mat& image);
     cv::Mat getROI(const cv::Mat& image) const;
     std::vector<cv::Vec4i> houghLines(const cv::Mat& image) const;

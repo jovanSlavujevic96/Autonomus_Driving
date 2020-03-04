@@ -2,7 +2,7 @@
 #include <cv_bridge/cv_bridge.h> 
 
 #define blue cv::Scalar(255, 0, 0)
-#define threshold 5
+#define threshold 8
 
 void LaneProcessor::resize(cv::Mat& image, const float resizeFactor)
 {
@@ -16,13 +16,64 @@ cv::Mat LaneProcessor::deNoise(const cv::Mat& image) const
     return deNoised;    
 }
 
-cv::Mat LaneProcessor::edges(const cv::Mat& image) const
+cv::Mat1b LaneProcessor::edges(const cv::Mat& image) const
 {
     cv::Mat gray, blur, canny;
     cv::cvtColor(image, gray, CV_RGB2GRAY);
     cv::GaussianBlur(gray, blur, cv::Size(5,5),0);
     cv::Canny(blur, canny, 50, 150);
     return canny;
+}
+
+cv::Mat1b LaneProcessor::colorSegmentation(const cv::Mat& image) const
+{
+    cv::Mat mask;
+
+    cv::Mat hsv;
+    cv::cvtColor(image, hsv, cv::COLOR_BGR2HSV);
+
+    cv::Mat whiteRange1,whiteRange2;
+    cv::inRange(hsv, cv::Scalar(105,5,90), cv::Scalar(125,25,130), whiteRange1);
+    cv::inRange(hsv, cv::Scalar(65,-5,70), cv::Scalar(85,15,105), whiteRange2);
+    cv::addWeighted(whiteRange1, 1.0f, whiteRange2, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(105,2,122), cv::Scalar(125,22,152), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(65,-2,56), cv::Scalar(85,18,86), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(105,45,18), cv::Scalar(125,65,48), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(105,-1,152), cv::Scalar(125,19,182), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(105,1,129), cv::Scalar(125,21,159), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(115,0,140), cv::Scalar(135,20,170), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(104,-3,167), cv::Scalar(124,17,197), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(115,2,114), cv::Scalar(135,22,144), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(116,6,68), cv::Scalar(136,26,98), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(115,4,100), cv::Scalar(135,24,130), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(105,0,137), cv::Scalar(125,20,167), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    cv::inRange(hsv, cv::Scalar(101,20,76), cv::Scalar(121,40,106), whiteRange1);
+    cv::addWeighted(whiteRange1, 1.0f, mask, 1.0f, 0.0f, mask);
+
+    return mask;
 }
 
 void LaneProcessor::createMask(const cv::Mat& image)
@@ -89,7 +140,7 @@ std::vector<std::vector<cv::Vec4i>> LaneProcessor::lineSeparation(const cv::Mat&
     }
 
     // Split the lines into right and left lines
-    double ImgCenter = static_cast<double>((image.cols / 2));
+    double ImgCenter = m_CameraCalibration.pt_RefDot.x; //static_cast<double>((image.cols / 2));
     
     for(int j=0; j<selected_lines.size(); ++j)
     {
@@ -143,6 +194,10 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std
             rightM = right_line[1] / right_line[0];
             rightB = cv::Point(right_line[2], right_line[3]);
         }
+        else
+        {
+            m_RightFlag = false;
+        }
     }
 
     // If left lines are being detected, fit a line using all the init and final points of the lines
@@ -164,10 +219,14 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std
             leftM = left_line[1] / left_line[0];
             leftB = cv::Point(left_line[2], left_line[3]);
         }
+        else
+        {
+            m_LeftFlag = false;
+        }
     }
 
     // One the slope and offset points have been obtained, apply the line equation to obtain the line points
-    int ini_y = image.rows;
+    int ini_y = m_CameraCalibration.pt_BotomLeft.y;//image.rows;
     
     //for specific video
     int fin_y = m_CameraCalibration.pt_RefDot.y;
@@ -177,6 +236,12 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std
 
     double left_ini_x = ((ini_y - leftB.y) / leftM) + leftB.x;
     double left_fin_x = ((fin_y - leftB.y) / leftM) + leftB.x;
+
+    if(std::abs(std::round(right_fin_x-left_fin_x)) <= threshold)
+    {
+        m_LeftFlag = false;
+        m_RightFlag = false;
+    }
 
     output[0] = cv::Point(right_ini_x, ini_y);
     output[1] = cv::Point(right_fin_x, fin_y);
@@ -194,6 +259,10 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std
 
 void LaneProcessor::setCoordinates(std::vector<cv::Point>& lanePts, const float resizeFactor)
 {
+    if(!m_LeftFlag && !m_RightFlag)
+    {
+        return;
+    }
     //resize lines
     for(int i=0; i<lanePts.size(); ++i)
     {
@@ -260,16 +329,17 @@ void LaneProcessor::plotLane(cv::Mat& image, const std::vector<cv::Point>& laneP
         cv::fillConvexPoly(tmp, poly_points, cv::Scalar(0, 0, 255), CV_AA, 0);
         cv::addWeighted(tmp, 0.3f, image, 1.0f - 0.3f, 0, image);
     }
-
+    /*
     cv::putText(image, LaneProcessor::getResult(), cv::Point(50, 90), 
         cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);  //print advised direction of driving 
+    */
 }
 
 LaneProcessor::LaneProcessor(const CameraCalibration& camCal) : 
     m_CameraCalibration{camCal},
     m_LeftFlag{false}, m_RightFlag{false}
 {   
-    //for specific  video
+
 }
 
 void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
@@ -284,6 +354,7 @@ void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
     LaneProcessor::resize(helpImage, m_CameraCalibration.resizePercentage);
     cv::Mat forProcess = LaneProcessor::deNoise(helpImage);
     forProcess = LaneProcessor::edges(forProcess);
+    //forProcess &= LaneProcessor::colorSegmentation(helpImage);
     if(m_FrameMask.empty() )
     {
         LaneProcessor::createMask(forProcess);
@@ -293,7 +364,8 @@ void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
     auto separatedLines = LaneProcessor::lineSeparation(helpImage, lines);
     auto regression = LaneProcessor::regression(helpImage, separatedLines);
     LaneProcessor::setCoordinates(regression, m_CameraCalibration.resizePercentage);
-    //LaneProcessor::plotLane(m_Frame, regression, m_CameraCalibration.resizePercentage);
+    
+    LaneProcessor::plotLane(m_Frame, regression, m_CameraCalibration.resizePercentage);
 }
 
 sensor_msgs::Image LaneProcessor::getProcessedFrame(void) const
@@ -310,9 +382,23 @@ sensor_msgs::Image LaneProcessor::getProcessedFrame(void) const
 
 std::string LaneProcessor::getResult(void) const    
 {
+    /*
     if(m_MeasuredDot == cv::Point() )
     {
         return "Changing the Lane";
+    }
+    */
+    if(!m_LeftFlag && !m_RightFlag)
+    {
+        return "There are no lines";
+    }
+    else if(!m_LeftFlag)
+    {
+        return "There's no Left line";
+    }
+    else if(!m_RightFlag)
+    {
+        return "There's no Right line";
     }
 
     if(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x >= threshold )    //its going right
