@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-	<test test-name="_ObjectVisualizer_GTest" pkg="bachelor" type="ObjectVisualizerTest" name="Visualizer_Node" />
-</launch>

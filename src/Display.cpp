@@ -21,6 +21,7 @@ void Display::resetVariables(void)
     for(auto& rcv : m_Recievement)
     {
         rcv.second = false;
+        m_Points[rcv.first].clear();
     }
 }
 
@@ -42,32 +43,30 @@ bool Display::pauseCheck(void)
     return true;
 }
 
-void Display::assignStringAndPoints(std::vector<std::string>& text, std::vector<std::vector<cv::Point>>& pts, const Topic topic)
+void Display::assignStringAndPoints(std::vector<std::string>*& text, std::vector<std::vector<cv::Point>>*& pts, const Topic topic)
 {
-    text.clear();
-    pts.clear();
+    text->clear();
 
     switch(topic)
     {
         case Coord_StopDet:
         {
-            text.push_back("");
+            text->push_back("");
             break;
         }
         case Coord_LimDet:
         {
-            text.push_back(m_ECULog.speed_limit);
+            text->push_back(m_ECULog.speed_limit);
             break;
         }
         case LogFromECU:
         {
-            text.push_back(m_ECULog.movement);
-            text.push_back(m_ECULog.speed_limit);
+            text->push_back(m_ECULog.movement);
+            text->push_back(m_ECULog.speed_limit);
             return;
         }
     }
-    pts = m_Points[topic];
-    m_Points[topic].clear();
+    pts = &m_Points[topic];
 }
 
 bool Display::drawAndDisplay(void)
@@ -81,20 +80,22 @@ bool Display::drawAndDisplay(void)
             m_PauseSender->Publish(msg);
         }
         Frame frame;
+        std::vector<std::string> text;
         frame.MatFrame = &m_Frame;
+        frame.Text = &text;
         for(auto& visualizer : m_Visualizers)
         {
             if(visualizer.first == LogFromECU)
             {
                 continue;
             }
-            Display::assignStringAndPoints(*frame.Text, *frame.Dots, visualizer.first);
+            Display::assignStringAndPoints(frame.Text, frame.Dots, visualizer.first);
             visualizer.second->draw(frame);
         }
         //it must be the last one
         if(m_Visualizers[LogFromECU] != NULL)
         {
-            Display::assignStringAndPoints(*frame.Text, *frame.Dots, LogFromECU);
+            Display::assignStringAndPoints(frame.Text, frame.Dots, LogFromECU);
             m_Visualizers[LogFromECU]->draw(frame);
         }
         try

@@ -19,8 +19,7 @@ ObjectVisualizer::ObjectVisualizer(VisualizerType type) :
 
 bool ObjectVisualizer::draw(Frame& frame)
 {
-    if( (*frame.Dots).empty() || frame.MatFrame->empty() || 
-        ( (*frame.Dots)[0][0] == cv::Point(0,0) && (*frame.Dots)[0][1] == cv::Point(0,0) ) )
+    if( (*frame.Dots).empty() || frame.MatFrame->empty() || (*frame.Dots)[0][0] == cv::Point(0,0) && (*frame.Dots)[0][1] == cv::Point(0,0) )
     {
         return false;
     }

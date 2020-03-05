@@ -48,7 +48,8 @@ add_message_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  std_msgs #sensros_msgs
+  std_msgs 
+  #sensros_msgs
 )
 
 ###################################
@@ -275,16 +276,13 @@ roslaunch_add_file_check(launch)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
+catkin_add_gmock(DisplayTest test/DisplayTest.cpp)
+catkin_add_gtest(ObjectVisualizerTest test/Visualizer/ObjectVisualizerTest.cpp)
+catkin_add_gtest(LaneVisualizerTest test/Visualizer/LaneVisualizerTest.cpp)
 if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-  add_rostest_gmock(DisplayTest test_launch/DisplayTest.test test/DisplayTest.cpp)
-  target_link_libraries(DisplayTest _DisplayLib ${OpenCV_LIBS} ${catkin_LIBRARIES})
-
-  add_rostest_gtest(ObjectVisualizerTest test_launch/Visualizer/ObjectVisualizerTest.test test/Visualizer/ObjectVisualizerTest.cpp)
+  target_link_libraries(DisplayTest _DisplayLib _DataProtocolLib ${OpenCV_LIBS} ${catkin_LIBRARIES} )
   target_link_libraries(ObjectVisualizerTest _VisualizerLib ${OpenCV_LIBS} ${catkin_LIBRARIES})
-
-  add_rostest_gtest(LaneVisualizerTest test_launch/Visualizer/LaneVisualizerTest.test test/Visualizer/LaneVisualizerTest.cpp)
-  target_link_libraries(LaneVisualizerTest _VisualizerLib _DataProtocolLib ${OpenCV_LIBS} ${catkin_LIBRARIES})
+  target_link_libraries(LaneVisualizerTest _VisualizerLib ${OpenCV_LIBS} ${catkin_LIBRARIES})
 endif()
 
 ## Add folders to be run by python nosetests

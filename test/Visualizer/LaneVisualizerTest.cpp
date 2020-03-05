@@ -147,5 +147,6 @@ TEST_F(LaneVisualizerTest, draw_lines_with_points_bigger_than_image)
 int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
+    testing::FLAGS_gtest_death_test_style="threadsafe";
     return RUN_ALL_TESTS();
 } 

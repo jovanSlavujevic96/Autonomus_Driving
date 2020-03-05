@@ -31,7 +31,7 @@ class Display :
     bool calculateRecievement(void);
     void resetVariables(void);
     bool pauseCheck(void);
-    void assignStringAndPoints(std::vector<std::string>& text, std::vector<std::vector<cv::Point>>& pts, const Topic topic);
+    void assignStringAndPoints(std::vector<std::string>*& text, std::vector<std::vector<cv::Point>>*& pts, const Topic topic);
     bool drawAndDisplay(void);
 public:
     Display();

@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-	<test test-name="_LaneVisualizer_GTest" pkg="bachelor" type="LaneVisualizerTest" name="Visualizer_Node" />
-</launch>
