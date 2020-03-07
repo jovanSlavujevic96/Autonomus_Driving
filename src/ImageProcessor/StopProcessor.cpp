@@ -120,7 +120,7 @@ std::vector<cv::Rect> StopProcessor::getDetectedStopContours(const cv::Mat &imag
 std::vector<cv::Mat> StopProcessor::getTextImagesForOCR(const int numOfResizing, std::vector<cv::Rect> &contours)
 {   
     std::vector<cv::Mat> images;
-    cv::Mat tmpFrame = m_Frame.clone();
+    cv::Mat tmpFrame = m_Frame.image.clone();
     StopProcessor::redColorSegmentation(tmpFrame, tmpFrame);
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1.5f, 1));
     for(int i=0; i<contours.size(); ++i)
@@ -187,12 +187,12 @@ std::vector<bool> StopProcessor::getDetectionPerRectFromOCR(const std::vector<cv
     return detection;
 }
 
-void StopProcessor::setCoordinates(const std::vector<bool>& detection, const std::vector<cv::Rect>& contours)
+void StopProcessor::setMessages(const std::vector<bool>& detection, const std::vector<cv::Rect>& contours)
 {
-    if(contours.empty() )
+    if(detection.empty() )
     {
-        m_Coordinates.push_back( {0,0,0,0} );
-        m_Detection = false;
+        m_Coordinates.coordinates.push_back( {cv::Point(0,0),cv::Point(0,0)} );
+        m_Detection.text[0] = "NO STOP";
         return;
     }
 
@@ -200,10 +200,10 @@ void StopProcessor::setCoordinates(const std::vector<bool>& detection, const std
     {
         if(detection[i])
         {
-            m_Coordinates.push_back({contours[i].x, contours[i].y, (contours[i].width+contours[i].x), (contours[i].height+contours[i].y) });
+            m_Coordinates.coordinates.push_back({cv::Point(contours[i].x, contours[i].y), cv::Point((contours[i].width+contours[i].x), (contours[i].height+contours[i].y)) });
         }
     }
-    m_Detection = true;
+    m_Detection.text[0] = "STOP";
 }
 
 void StopProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detection, const std::vector<cv::Rect> &contours,
@@ -230,19 +230,20 @@ void StopProcessor::drawLocations(cv::Mat &image, const std::vector<bool> &detec
 }
 
 StopProcessor::StopProcessor() :
-    m_Detection{false}
+    m_Detected{false}
 {
+    m_Detection.text = std::vector<std::string>(1);
     const std::string Path = StopClassifierPath;
     StopProcessor::loadCascade(&m_StopClassifier, 1, &Path);
     this->m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "STOP", 1, 6);
 }
 
-void StopProcessor::setFrame(const sensor_msgs::Image &Frame)
+void StopProcessor::setFrame(const IMessage* frame)
 {
-    m_Coordinates.clear();
-    m_Frame = cv_bridge::toCvCopy(Frame, "bgr8")->image.clone();
+    m_Coordinates.coordinates.clear();
+    m_Frame = *(static_cast<const ImageMessage*>(frame));
 
-    auto helpImage = m_Frame.clone();
+    auto helpImage = m_Frame.image.clone();
     auto numOfResizing = StopProcessor::resize(helpImage, 600); //resize image for faster performance!
     StopProcessor::crop(helpImage); //use only upper half of the image(frame) for faster performance!
     cv::Mat1b redHueImage;  //binary mask
@@ -251,29 +252,9 @@ void StopProcessor::setFrame(const sensor_msgs::Image &Frame)
     contours = StopProcessor::getDetectedStopContours(helpImage, contours);
     auto images = StopProcessor::getTextImagesForOCR(numOfResizing, contours);
     auto detection = StopProcessor::getDetectionPerRectFromOCR(images);
-    StopProcessor::setCoordinates(detection, contours);
+    StopProcessor::setMessages(detection, contours);
     
-    StopProcessor::drawLocations(m_Frame, detection, contours);
-}
-
-sensor_msgs::Image StopProcessor::getProcessedFrame(void) const
-{
-    cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
-    cv_ptr->encoding = "bgr8";
-	cv_ptr->image = m_Frame;
-
-    sensor_msgs::Image image1;
-	cv_ptr->toImageMsg(image1);
-    return image1;
-}
-
-std::string StopProcessor::getResult(void) const
-{
-    if(m_Detection)
-    {
-        return "STOP";
-    }
-    return "NO STOP";
+    StopProcessor::drawLocations(m_Frame.image, detection, contours);
 }
 
 Topic StopProcessor::getWatchdogTopic(void) const
@@ -291,7 +272,17 @@ Topic StopProcessor::getECUTopic(void) const
     return ECU_StopDet;
 }
 
-std::vector<std::vector<int>> StopProcessor::getCoordinates(void) const
+const IMessage* StopProcessor::getCoordinateMessage(void) const
 {
-    return m_Coordinates;
+    return &m_Coordinates;
+}
+
+const IMessage* StopProcessor::getProcFrameMessage(void) const
+{
+    return &m_Frame;
+}
+
+const IMessage* StopProcessor::getDetectionMessage(void) const
+{
+    return &m_Detection;
 }

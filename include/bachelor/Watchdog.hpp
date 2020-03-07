@@ -6,10 +6,9 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <std_msgs/Bool.h>
 
 class Watchdog : 
-    public IObserver<std_msgs::Bool>
+    public IObserver
 {
 private:
     std::map<Topic, bool> m_ImHereRcv;
@@ -27,7 +26,7 @@ public:
 
     void addNodeToWatch(const Topic topic);
 
-    void update(const std_msgs::Bool& msg, const Topic subjTopic) override;
+    void update(const IPlatformRcv* receiver) override;
     bool doStuff(void) override;
 };
 

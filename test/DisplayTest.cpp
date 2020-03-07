@@ -28,7 +28,8 @@ TEST_F(DisplayTest, DisplayTest1)
 
 int main(int argc, char** argv)
 {
-    testing::InitGoogleMock(&argc,argv);
+    //testing::InitGoogleMock(&argc,argv);
+    testing::InitGoogleTest(&argc,argv);
     //ros::init(argc, argv, "Display_test");
     return RUN_ALL_TESTS();
 } 

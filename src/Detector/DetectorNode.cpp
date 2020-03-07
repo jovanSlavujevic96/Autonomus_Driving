@@ -1,9 +1,10 @@
 #include <bachelor/Detector/DetectorNode.hpp>
 #include <ros/ros.h>
+#include <bachelor/DataProtocol/PlatformRcvImage.hpp>
 
 void DetectorNode::init(void)
 {
-    m_FrameRcv = std::make_unique<DataReceiver<sensor_msgs::Image>>(RawFrame);
+    m_FrameRcv = std::make_unique<Receiver>(std::make_unique<PlatformRcvImage>(RawFrame));
     m_FrameRcv->registerObserver(m_Detector.get() );
 }
 

@@ -6,16 +6,23 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/text/ocr.hpp>
 
+#include <bachelor/Message/CoordMessage.hpp>
+#include <bachelor/Message/ImageMessage.hpp>
+#include <bachelor/Message/StringMessage.hpp>
+
 #define NumOfClassifiers 2
 
 class LimitProcessor : 
     public IImageProcessor
 {
 private:
+    CoordMessage m_Coordinates;
+    ImageMessage m_Frame;
+    StringMessage m_Detection;
+    
     cv::CascadeClassifier m_SpeedClassifier[NumOfClassifiers];
-    cv::Mat m_Frame, m_ImageMask;
+    cv::Mat m_ImageMask;
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
-    std::vector<std::vector<int>> m_Coordinates;
     int m_LimitValue;
     static bool m_DeleteFile;
 
@@ -35,7 +42,7 @@ private:
     void getValueFromOCRstring(std::string& string, int& value, std::string& word);
     std::vector<int> getOCR(std::vector<cv::Mat>& images, std::vector<cv::Rect>& contours);
     int getMode(const std::vector<int>& value);
-    void setCoordinates(const std::vector<cv::Rect>& contours);
+    void setMessages(const std::vector<cv::Rect>& contours);
 
     void drawLocations(cv::Mat& image, const std::vector<cv::Rect>& contours,
         const cv::Scalar& colorText, const cv::Scalar& colorEdge, const std::string& text);
@@ -44,13 +51,13 @@ public:
     LimitProcessor();
     virtual ~LimitProcessor();
 
-    void setFrame(const sensor_msgs::Image& frame) override;
-    sensor_msgs::Image getProcessedFrame(void) const override;
-    std::string getResult(void) const override;
+    void setFrame(const IMessage* frame) override;    
     Topic getWatchdogTopic(void) const override;
     Topic getCoordinateTopic(void) const override;
     Topic getECUTopic(void) const override;
-    std::vector<std::vector<int>> getCoordinates(void) const override;
+    const IMessage* getCoordinateMessage(void) const override;
+    const IMessage* getProcFrameMessage(void) const override;
+    const IMessage* getDetectionMessage(void) const override;
 };
 
 #endif //BACHELOR_IMAGEPROCESSOR_SPEEDLIMITPROCESSOR_HPP

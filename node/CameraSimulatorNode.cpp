@@ -1,5 +1,7 @@
 #include <bachelor/CameraSimulator.hpp>
-#include <bachelor/DataReceiver/DataReceiver.hpp>
+#include <bachelor/DataProtocol/Receiver.hpp>
+
+#include <bachelor/DataProtocol/PlatformRcvBool.hpp>
 
 #include <ros/ros.h>
 
@@ -37,18 +39,18 @@ int main(int argc, char **argv)
 	
 	ros::init(argc, argv, nodeName);
 
-	std::unique_ptr<CameraSimulator> PlayerObserver = std::make_unique<CameraSimulator>();
-	PlayerObserver->setVideo(videoCap);
+	std::unique_ptr<CameraSimulator> CameraObserver = std::make_unique<CameraSimulator>();
+	CameraObserver->setVideo(videoCap);
 
-	std::unique_ptr<IDataReceiver<std_msgs::Bool> > DataSubject;
-	DataSubject = std::make_unique<DataReceiver<std_msgs::Bool>>(PauseOrPlay);
-	DataSubject->registerObserver(PlayerObserver.get());
+	std::unique_ptr<IReceiver> DataSubject;
+	DataSubject = std::make_unique<Receiver>(std::make_unique<PlatformRcvBool>(PauseOrPlay));
+	DataSubject->registerObserver(CameraObserver.get());
 
 	std::cout << nodeName << " successfully initialized." << std::endl; 
 
 	while(ros::ok() )
 	{
-		if(!PlayerObserver->doStuff())
+		if(!CameraObserver->doStuff())
 		{
 			std::cout << "No more frames!" << std::endl;
 			break;

@@ -1,7 +1,8 @@
 #include <ros/ros.h>
 
 #include <bachelor/ECU.hpp>
-#include <bachelor/DataReceiver/DataReceiver.hpp>
+#include <bachelor/DataProtocol/Receiver.hpp>
+#include <bachelor/DataProtocol/PlatformRcvString.hpp>
 
 int main(int argc, char **argv)
 {
@@ -9,13 +10,12 @@ int main(int argc, char **argv)
     ros::init(argc, argv, nodeName);
 
     ECU ecu;
-    std::unique_ptr<IDataReceiver<std_msgs::String>> stringRcv[3];
+    std::unique_ptr<IReceiver> stringRcv[3];
     const Topic topics[3] = {ECU_LaneDet, ECU_LimDet, ECU_StopDet};
     for(int i=0; i<3; ++i)
     {
-        stringRcv[i] = std::make_unique<DataReceiver<std_msgs::String>>(topics[i]);
+        stringRcv[i] = std::make_unique<Receiver>(std::make_unique<PlatformRcvString>(topics[i]));
         stringRcv[i]->registerObserver(&ecu);
-        ecu.addTopic(topics[i]);
     }
 
     std::cout << nodeName << " successfully initialized" << std::endl;

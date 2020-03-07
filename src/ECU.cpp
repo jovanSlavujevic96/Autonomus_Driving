@@ -1,5 +1,11 @@
 #include <bachelor/ECU.hpp>
-#include <bachelor/DataSender/DataSender.hpp>
+#include <bachelor/DataProtocol/Sender.hpp>
+#include <vector>
+#include <bachelor/DataProtocol/IPlatformRcv.hpp>
+#include <bachelor/Message/IMessage.hpp>
+#include <bachelor/Message/BoolMessage.hpp>
+#include <bachelor/Message/StringMessage.hpp>
+
 
 void ECU::assignReceived(const Topic topic)
 {
@@ -24,41 +30,38 @@ void ECU::assignReceived(const Topic topic)
 }
 
 ECU::ECU() :
-    m_LogSender{std::make_unique<DataSender<bachelor::Log>>(LogFromECU) },
-    m_ImHere{std::make_unique<DataSender<std_msgs::Bool>>(ImHere_ECU) }
+    m_LogSender{std::make_unique<Sender<std::vector<std::string>>>(LogFromECU) },
+    m_ImHere{std::make_unique<Sender<bool>>(ImHere_ECU) }
 {
     this->m_StopDetected = false;
     this->m_Limit = "NaN";
     this->m_Movement = "NaN";
 }
 
-void ECU::addTopic(const Topic topic)
+void ECU::update(const IPlatformRcv* receiver)
 {
-    m_MsgTable[topic] = std::string();
-}
-
-void ECU::update(const std_msgs::String& msg, const Topic subjTopic)
-{
-    m_MsgTable[subjTopic] = msg.data;
-    ECU::assignReceived(subjTopic);
+    auto msg = static_cast<const StringMessage*>(receiver->getMessage());
+    m_MsgTable[msg->topic] = msg->text[0];
+    ECU::assignReceived(msg->topic);
 }
 
 bool ECU::doStuff(void)
 {
     {
-        std_msgs::Bool msg;
-        msg.data = true;
-        m_ImHere->Publish(msg);
+        BoolMessage msg;
+        msg.info = true;
+        m_ImHere->Publish(&msg);
     }
     {
-        bachelor::Log msg;
+        StringMessage msg;
+        msg.text = std::vector<std::string>(2);
         if(m_StopDetected)
         {
             m_Movement = "Brake"; 
         }
-        msg.movement = m_Movement;
-        msg.speed_limit = m_Limit;
-        m_LogSender->Publish(msg);
+        msg.text[0] = m_Movement;
+        msg.text[1] = m_Limit;
+        m_LogSender->Publish(&msg);
     }
     return true;
 }

@@ -6,15 +6,21 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/text/ocr.hpp>
 
+#include <bachelor/Message/CoordMessage.hpp>
+#include <bachelor/Message/ImageMessage.hpp>
+#include <bachelor/Message/StringMessage.hpp>
+
 class StopProcessor : 
     public IImageProcessor
 {
 private:
-    cv::Mat m_Frame;
+    CoordMessage m_Coordinates;
+    ImageMessage m_Frame;
+    StringMessage m_Detection;
+
     cv::CascadeClassifier m_StopClassifier;
     cv::Ptr<cv::text::OCRTesseract> m_OCR;
-    std::vector<std::vector<int>> m_Coordinates;
-    bool m_Detection;
+    bool m_Detected;
 
     void loadCascade(cv::CascadeClassifier* cascade, const int size, const std::string* path);
     int resize(cv::Mat& image, const int limit);
@@ -24,7 +30,7 @@ private:
     std::vector<cv::Rect> getDetectedStopContours(const cv::Mat& image, std::vector<cv::Rect>& contours);
     std::vector<cv::Mat> getTextImagesForOCR(const int numOfResizing, std::vector<cv::Rect>& contours);
     std::vector<bool> getDetectionPerRectFromOCR(const std::vector<cv::Mat>& images);
-    void setCoordinates(const std::vector<bool>& detection, const std::vector<cv::Rect>& contours);
+    void setMessages(const std::vector<bool>& detection, const std::vector<cv::Rect>& contours);
     
    	void drawLocations(cv::Mat& image, const std::vector<bool>& detection, const std::vector<cv::Rect>& contours,
         const cv::Scalar& colorEdge, const cv::Scalar& colorText, const std::string& text);
@@ -33,13 +39,13 @@ public:
     StopProcessor(); 
     virtual ~StopProcessor() = default;
 
-    void setFrame(const sensor_msgs::Image& frame) override;
-    sensor_msgs::Image getProcessedFrame(void) const override;
-    std::string getResult(void) const override;
+    void setFrame(const IMessage* frame) override;    
     Topic getWatchdogTopic(void) const override;
     Topic getCoordinateTopic(void) const override;
     Topic getECUTopic(void) const override;
-    std::vector<std::vector<int>> getCoordinates(void) const override;
+    const IMessage* getCoordinateMessage(void) const override;
+    const IMessage* getProcFrameMessage(void) const override;
+    const IMessage* getDetectionMessage(void) const override;
 };
 
 #endif //BACHELOR_OBJECTDETECTORNODE_STOPSIGNPROCESSOR_HPP

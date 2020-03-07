@@ -1,45 +1,36 @@
 #include <bachelor/Detector/Detector.hpp>
-#include <bachelor/DataSender/DataSender.hpp>
+#include <bachelor/DataProtocol/Sender.hpp>
+#include <bachelor/Message/IMessage.hpp>
+#include <bachelor/Message/BoolMessage.hpp>
+#include <bachelor/Message/ImageMessage.hpp>
+#include <bachelor/Message/StringMessage.hpp>
+#include <bachelor/DataProtocol/IPlatformRcv.hpp>
 
 Detector::Detector(std::unique_ptr<IImageProcessor> procType) :	
-	m_DataEmiterWatchdog{std::make_unique<DataSender<std_msgs::Bool>>(procType->getWatchdogTopic() ) },
-	m_CoordSender{std::make_unique<DataSender<bachelor::Coordinates>>(procType->getCoordinateTopic() ) },
-	m_ToECU{std::make_unique<DataSender<std_msgs::String>>(procType->getECUTopic() ) },
+	m_DataEmiterWatchdog{std::make_unique<Sender<bool>>(procType->getWatchdogTopic() ) },
+	m_CoordSender{std::make_unique<Sender<std::vector<std::vector<cv::Point>>>>(procType->getCoordinateTopic() ) },
+	m_ToECU{std::make_unique<Sender<std::string>>(procType->getECUTopic() ) },
 	m_ImgProc{std::move(procType) }
 {
 
 }
 
-void Detector::update(const sensor_msgs::Image& msg, const Topic subjTopic)
+void Detector::update(const IPlatformRcv* receiver)
 {
-	if(subjTopic == RawFrame)
+	auto msg1 = static_cast<const ImageMessage*>(receiver->getMessage());
+	if(msg1->topic == RawFrame)
 	{
-		m_ImgProc->setFrame(msg);
-
-		std_msgs::String msg2;
-		msg2.data = m_ImgProc->getResult();
-		m_ToECU->Publish(msg2);
-
-		auto Vecs = m_ImgProc->getCoordinates();
-		bachelor::Coordinates msg3;
-		msg3.size = Vecs.size();
-		for(int i=0; i<Vecs.size(); i++)
-		{
-			auto tmpVec = Vecs[i];
-			msg3.X1.push_back(tmpVec[0]);
-			msg3.Y1.push_back(tmpVec[1]);
-			msg3.X2.push_back(tmpVec[2]);
-			msg3.Y2.push_back(tmpVec[3]);
-		}
-		m_CoordSender->Publish(msg3);
+		m_ImgProc->setFrame(msg1);
+		m_ToECU->Publish(m_ImgProc->getDetectionMessage());
+		m_CoordSender->Publish(m_ImgProc->getCoordinateMessage());
 	}
 }
 
 bool Detector::doStuff(void)
 {
-	std_msgs::Bool msg;
-	msg.data = true;
-	m_DataEmiterWatchdog->Publish(msg);
+	BoolMessage msg;
+	msg.info = true;
+	m_DataEmiterWatchdog->Publish(&msg);
 	
 	return true;
 }

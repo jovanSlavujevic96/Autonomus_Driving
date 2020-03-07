@@ -2,7 +2,7 @@
 #define BACHELOR_CAMERASIMULATOR_HPP_
 
 #include <bachelor/IObserver.hpp>
-#include <bachelor/DataSender/IDataSender.hpp>
+#include <bachelor/DataProtocol/ISender.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <memory>
@@ -10,15 +10,16 @@
 #include <std_msgs/Bool.h>
 #include <image_transport/image_transport.h>
 
+class IPlatformRcv;
+
 class CameraSimulator : 
-	public IObserver<std_msgs::Bool>
+	public IObserver
 {
 private:
-	std::unique_ptr<IDataSender<sensor_msgs::Image>> m_FrameEmiter;
-	std::unique_ptr<IDataSender<std_msgs::Bool>> m_WatchdogEmiter;
-	bool m_NodeMSG;
+	std::unique_ptr<ISender> m_FrameEmiter;
+	std::unique_ptr<ISender> m_WatchdogEmiter;
 	cv::VideoCapture m_Video;
-	bool m_IgnoreDetection = false, m_PauseVideo = false;
+	bool m_PauseVideo = false;
 
 	void checkMsgs(void);
 public:
@@ -27,8 +28,8 @@ public:
 
 	void setVideo(cv::VideoCapture& video);
 
-	void update(const std_msgs::Bool& msg, const Topic subjTopic) override;
-	bool doStuff(void) override;
+	void update(const IPlatformRcv* receiver) override;
+	bool doStuff(void);
 };
 
 #endif //BACHELOR_CAMERASIMULATOR_HPP_

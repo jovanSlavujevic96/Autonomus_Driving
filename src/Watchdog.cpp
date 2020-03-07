@@ -3,7 +3,8 @@
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
-#include <numeric>
+#include <bachelor/DataProtocol/IPlatformRcv.hpp>
+#include <bachelor/Message/BoolMessage.hpp>
 
 #define counter_limit 10
 #define mil 1000000
@@ -88,10 +89,10 @@ void Watchdog::addNodeToWatch(const Topic topic)
     m_ImHereRcv[topic] = false;
 }
 
-void Watchdog::update(const std_msgs::Bool& msg, const Topic subjTopic)
+void Watchdog::update(const IPlatformRcv* receiver)
 {
-    m_ImHereRcv[subjTopic] = msg.data;
-    std::cout << "received msg from: " << NodeName[subjTopic] << std::endl;
+    auto msg = static_cast<const BoolMessage*>(receiver->getMessage() );
+    m_ImHereRcv[msg->topic] = msg->info;
 }
 
 bool Watchdog::doStuff(void)

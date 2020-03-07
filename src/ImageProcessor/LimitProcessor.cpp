@@ -32,6 +32,7 @@ void LimitProcessor::loadCascade(cv::CascadeClassifier* cascade, const int size,
         }
         std::cout << "Successfully loaded classifier from path: " << path[i] << std::endl;
     }
+    std::cout << std::endl;
 }
 
 void LimitProcessor::resize(cv::Mat& imageToResize, const float resizeFactor)
@@ -425,17 +426,23 @@ int LimitProcessor::getMode(const std::vector<int>& value)
     return highest;
 }
 
-void LimitProcessor::setCoordinates(const std::vector<cv::Rect>& contours)
+void LimitProcessor::setMessages(const std::vector<cv::Rect>& contours)
 {
+    m_Detection.text[0] = std::to_string(m_LimitValue);
+    if(!m_LimitValue)
+    {
+        m_Detection.text[0] = "NaN";
+    }
+
     if(contours.empty()) 
     {
-        m_Coordinates.push_back({0,0,0,0});
+        m_Coordinates.coordinates.push_back({cv::Point(0,0),cv::Point(0,0)});
         return;
     }
 
     for(int i=0; i<contours.size(); ++i)
     {
-        m_Coordinates.push_back({contours[i].x, contours[i].y, (contours[i].width+contours[i].x), (contours[i].height+contours[i].y) });
+        m_Coordinates.coordinates.push_back({cv::Point(contours[i].x, contours[i].y), cv::Point((contours[i].width+contours[i].x), (contours[i].height+contours[i].y)) });
     }
 }
 
@@ -467,7 +474,7 @@ LimitProcessor::LimitProcessor()  :
     LimitProcessor::loadCascade(m_SpeedClassifier, NumOfClassifiers, Path);
     
     this->m_OCR = cv::text::OCRTesseract::create(NULL, "eng", "0123456789", 1, 6); //PSM_CIRCLE_WORD
-    std::cout << std::endl;//
+    m_Detection.text = std::vector<std::string>(1);
 }
 
 LimitProcessor::~LimitProcessor() 
@@ -478,14 +485,14 @@ LimitProcessor::~LimitProcessor()
     }
 }
 
-void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
+void LimitProcessor::setFrame(const IMessage* frame)
 {
-    m_Coordinates.clear();
+    m_Coordinates.coordinates.clear();
     cv::Mat1b redHueImage;  //binary mask
     std::vector<cv::Rect> contours;
     {
-        m_Frame = cv_bridge::toCvCopy(frame, "bgr8")->image.clone();
-        auto helpImage = m_Frame.clone();
+        m_Frame = *(static_cast<const ImageMessage*>(frame));
+        auto helpImage = m_Frame.image.clone();
         LimitProcessor::resize(helpImage, resizeFrameFactor);
         
         if(m_ImageMask.empty() == true)
@@ -503,35 +510,15 @@ void LimitProcessor::setFrame(const sensor_msgs::Image& frame)
         LimitProcessor::resize(redHueImage, (1/resizeFrameFactor) );   //increase size of image
         LimitProcessor::resize(contours, (1/resizeFrameFactor) );    //increase size of rectangles
 
-        auto images = LimitProcessor::getTextImagesForOCR(m_Frame, redHueImage, contours);
+        auto images = LimitProcessor::getTextImagesForOCR(m_Frame.image, redHueImage, contours);
         std::vector<int> numbers = LimitProcessor::getOCR(images, contours);
         if(numbers.size() > 0)
         {
             m_LimitValue = LimitProcessor::getMode(numbers);
         }
     }
-    LimitProcessor::setCoordinates(contours);
-    LimitProcessor::drawLocations(m_Frame, contours); 
-}
-
-sensor_msgs::Image LimitProcessor::getProcessedFrame(void) const
-{
-    cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
-    cv_ptr->encoding = "bgr8";
-	cv_ptr->image = m_Frame;
-
-    sensor_msgs::Image image1;
-	cv_ptr->toImageMsg(image1);
-    return image1;
-}
-
-std::string LimitProcessor::getResult(void) const
-{
-    if(m_LimitValue > 0)
-    {
-        return std::to_string(m_LimitValue);
-    }
-    return "NaN";
+    LimitProcessor::setMessages(contours);
+    LimitProcessor::drawLocations(m_Frame.image, contours); 
 }
 
 Topic LimitProcessor::getWatchdogTopic(void) const
@@ -549,7 +536,17 @@ Topic LimitProcessor::getECUTopic(void) const
     return ECU_LimDet;
 }
 
-std::vector<std::vector<int>> LimitProcessor::getCoordinates(void) const
+const IMessage* LimitProcessor::getCoordinateMessage(void) const
 {
-    return m_Coordinates;
+    return &m_Coordinates;
+}
+
+const IMessage* LimitProcessor::getProcFrameMessage(void) const
+{
+    return &m_Frame;
+}
+
+const IMessage* LimitProcessor::getDetectionMessage(void) const
+{
+    return &m_Detection;
 }

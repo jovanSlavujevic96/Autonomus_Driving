@@ -5,6 +5,7 @@
 #include <image_transport/image_transport.h>
 #include <string>
 #include <vector>
+#include <bachelor/Message/ImageMessage.hpp>
 
 class IImageProcessor
 {
@@ -12,13 +13,13 @@ public:
     explicit IImageProcessor() = default;
     virtual ~IImageProcessor() = default;
 
-    virtual void setFrame(const sensor_msgs::Image& frame) = 0;
-    virtual sensor_msgs::Image getProcessedFrame(void) const = 0;
-    virtual std::string getResult(void) const = 0;
+    virtual void setFrame(const IMessage* frame) = 0;
     virtual Topic getWatchdogTopic(void) const = 0;
     virtual Topic getCoordinateTopic(void) const = 0;
     virtual Topic getECUTopic(void) const = 0;
-    virtual std::vector<std::vector<int>> getCoordinates(void) const = 0;
+    virtual const IMessage* getCoordinateMessage(void) const = 0;
+    virtual const IMessage* getProcFrameMessage(void) const = 0;
+    virtual const IMessage* getDetectionMessage(void) const = 0;
 };
 
 #endif //BACHELOR_IMAGEPROCESSOR_IIMAGEPROCESSOR_HPP

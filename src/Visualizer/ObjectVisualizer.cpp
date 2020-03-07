@@ -36,9 +36,9 @@ bool ObjectVisualizer::draw(Frame& frame)
         cv::rectangle(*frame.MatFrame, cv::Rect((*frame.Dots)[i][0], (*frame.Dots)[i][1]), m_RectColor, 3);
         auto pt = cv::Point( rect.x+1, rect.width+rect.y+18 );
         std::string _frameText;
-        if(!(*frame.Text).empty() )
+        if(! ((*frame.Text).size() < 2) && m_VisualizerType != StopVizType )
         {
-            _frameText = (*frame.Text)[0];
+            _frameText = (*frame.Text)[1];
         }
         cv::putText(*frame.MatFrame, (m_SignName+_frameText), pt, cv::FONT_HERSHEY_DUPLEX, 0.7f, m_TextColor, 1);
     }

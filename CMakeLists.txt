@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.16.4)
+cmake_minimum_required(VERSION 3.16.2) 
+#max 3.16.2 on personal laptop on rtrk pc 3.16.4
 project(bachelor)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-g)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -87,8 +88,14 @@ include_directories(
 add_library(_DataProtocolLib
   src/TopicName.cc
   src/NodeName.cc
-  src/DataSender/DataSender.cpp
-  src/DataReceiver/DataReceiver.cpp
+  src/DataProtocol/Sender.cpp
+  src/DataProtocol/Receiver.cpp
+  src/DataProtocol/PlatformRcv.cpp
+  src/DataProtocol/PlatformRcvImage.cpp
+  src/DataProtocol/PlatformRcvCoord.cpp
+  src/DataProtocol/PlatformRcvBool.cpp
+  src/DataProtocol/PlatformRcvLog.cpp
+  src/DataProtocol/PlatformRcvString.cpp
 )
 ############################################## CameraSimulator_Node
 
@@ -226,22 +233,22 @@ add_dependencies(ECU_Node
 
 #################################################
 
-add_executable(detTest help_programs/detectionTest.cpp ) 
+#add_executable(detTest help_programs/detectionTest.cpp ) 
 
-target_link_libraries(detTest 
-  _DetectorLib
-  _ImageProcessorLib
-  _VisualizerLib
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES}
-)
+#target_link_libraries(detTest 
+#  _DetectorLib
+#  _ImageProcessorLib
+#  _VisualizerLib
+#  ${OpenCV_LIBS} 
+#  ${catkin_LIBRARIES}
+#)
 
-add_executable(saveVideo help_programs/saveVideo.cpp ) 
+#add_executable(saveVideo help_programs/saveVideo.cpp ) 
 
-target_link_libraries(saveVideo 
-  ${OpenCV_LIBS} 
-  ${catkin_LIBRARIES}
-)
+#target_link_libraries(saveVideo 
+#  ${OpenCV_LIBS} 
+#  ${catkin_LIBRARIES}
+#)
 
 ##############################################
 
@@ -276,7 +283,7 @@ roslaunch_add_file_check(launch)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
-catkin_add_gmock(DisplayTest test/DisplayTest.cpp)
+catkin_add_gtest(DisplayTest test/DisplayTest.cpp)
 catkin_add_gtest(ObjectVisualizerTest test/Visualizer/ObjectVisualizerTest.cpp)
 catkin_add_gtest(LaneVisualizerTest test/Visualizer/LaneVisualizerTest.cpp)
 if(CATKIN_ENABLE_TESTING)

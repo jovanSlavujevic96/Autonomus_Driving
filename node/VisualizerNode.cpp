@@ -3,7 +3,10 @@
 #include <map>
 
 #include <bachelor/Display.hpp>
-#include <bachelor/DataReceiver/DataReceiver.hpp>
+#include <bachelor/DataProtocol/Receiver.hpp>
+#include <bachelor/DataProtocol/PlatformRcvCoord.hpp>
+#include <bachelor/DataProtocol/PlatformRcvLog.hpp>
+#include <bachelor/DataProtocol/PlatformRcvImage.hpp>
 
 #include <bachelor/Visualizer/LaneVisualizer.hpp>
 #include <bachelor/Visualizer/ObjectVisualizer.hpp>
@@ -39,7 +42,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, nodeName);
 
     Display display;
-    std::unique_ptr<IDataReceiver<bachelor::Coordinates>> coordinatesRcv[3];
+    std::unique_ptr<IReceiver> coordinatesRcv[3];
     {
         const std::string names[3] = {"lanes", "limit rects", "stop rects"};
         const Topic topics[3] = {Coord_LaneDet, Coord_LimDet, Coord_StopDet};
@@ -48,7 +51,7 @@ int main(int argc, char **argv)
             std::cout << "draw "<< names[i] << ": " << std::boolalpha << draw[i] << std::endl;
             if(draw[i])
             {
-                coordinatesRcv[i] = std::make_unique<DataReceiver<bachelor::Coordinates>>(topics[i]);
+                coordinatesRcv[i] = std::make_unique<Receiver>(std::make_unique<PlatformRcvCoord>(topics[i]));
                 coordinatesRcv[i]->registerObserver(&display);
                 display.addVisualizer(visualizer[i].get(), topics[i]);
             }
@@ -57,10 +60,11 @@ int main(int argc, char **argv)
     std::unique_ptr<IVisualizer> LogViz = std::make_unique<LogVisualizer>();
     display.addVisualizer(LogViz.get(), LogFromECU);
 
-    std::unique_ptr<IDataReceiver<sensor_msgs::Image>> framesRcv = std::make_unique<DataReceiver<sensor_msgs::Image>>(RawFrame);
+    std::unique_ptr<IReceiver> framesRcv;
+    framesRcv = std::make_unique<Receiver>(std::make_unique<PlatformRcvImage>(RawFrame));
     framesRcv->registerObserver(&display);
 
-    std::unique_ptr<IDataReceiver<bachelor::Log>> logRcv = std::make_unique<DataReceiver<bachelor::Log>>(LogFromECU);
+    std::unique_ptr<IReceiver> logRcv = std::make_unique<Receiver>(std::make_unique<PlatformRcvLog>(LogFromECU));
     logRcv->registerObserver(&display);
     
     std::cout << nodeName << " successfully initialized." << std::endl; 

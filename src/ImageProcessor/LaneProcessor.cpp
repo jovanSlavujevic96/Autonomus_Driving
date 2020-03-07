@@ -257,50 +257,71 @@ std::vector<cv::Point> LaneProcessor::regression(const cv::Mat& image, const std
     return output;
 }
 
-void LaneProcessor::setCoordinates(std::vector<cv::Point>& lanePts, const float resizeFactor)
+void LaneProcessor::setMessages(std::vector<cv::Point>& lanePts, const float resizeFactor)
 {
+    
     if(!m_LeftFlag && !m_RightFlag)
     {
+        m_Detection.text[0] = "There are no lines";
+        for(int i=0; i<4; ++i)
+        {
+            m_Coordinates.coordinates[i] = {cv::Point(0,0), cv::Point(0,0) };
+        }
         return;
     }
+    
     //resize lines
     for(int i=0; i<lanePts.size(); ++i)
     {
         lanePts[i].x = std::round(lanePts[i].x/resizeFactor);
         lanePts[i].y = std::round(lanePts[i].y/resizeFactor);
     }
+
     //first push right line
     if(m_RightFlag) 
     {
-        m_Coordinates.push_back({lanePts[0].x, lanePts[0].y, lanePts[1].x, lanePts[1].y });
+        m_Coordinates.coordinates[0] = { cv::Point(lanePts[0].x, lanePts[0].y),cv::Point(lanePts[1].x, lanePts[1].y) };
     }
     else
     {
-        m_Coordinates.push_back({0,0,0,0});
+        m_Detection.text[0] = "There's no Right line";
+        m_Coordinates.coordinates[0] = {cv::Point(0,0), cv::Point(0,0) };
     }
     //second push left line
     if(m_LeftFlag)  
     {
-        m_Coordinates.push_back({lanePts[2].x, lanePts[2].y, lanePts[3].x, lanePts[3].y});
+        m_Coordinates.coordinates[1] = {cv::Point(lanePts[2].x, lanePts[2].y), cv::Point(lanePts[3].x, lanePts[3].y)};
     }
     else
     {
-        m_Coordinates.push_back({0,0,0,0});
+        m_Detection.text[0] = "There's no Left line";
+        m_Coordinates.coordinates[1] ={cv::Point(0,0),cv::Point(0,0)};
     }
     //then push measured and ref dot like lines
     if(m_LeftFlag && m_RightFlag) 
     {   
-        m_Coordinates.push_back({(int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y+30)/resizeFactor), 
-            (int)std::round(m_MeasuredDot.x/resizeFactor), (int)std::round((m_MeasuredDot.y-30)/resizeFactor)});
+        m_Coordinates.coordinates[2] = {cv::Point(std::round(m_MeasuredDot.x/resizeFactor), std::round((m_MeasuredDot.y+30)/resizeFactor) ), 
+            cv::Point(std::round(m_MeasuredDot.x/resizeFactor), std::round((m_MeasuredDot.y-30)/resizeFactor))};
 
-        m_Coordinates.push_back({(int)std::round(m_CameraCalibration.pt_RefDot.x/resizeFactor), (int)std::round((m_CameraCalibration.pt_RefDot.y+15)/resizeFactor), 
-            (int)std::round(m_CameraCalibration.pt_RefDot.x/resizeFactor), (int)std::round((m_CameraCalibration.pt_RefDot.y-15)/resizeFactor) });
+        m_Coordinates.coordinates[3] = {cv::Point(std::round(m_CameraCalibration.pt_RefDot.x/resizeFactor), std::round((m_CameraCalibration.pt_RefDot.y+15)/resizeFactor)), 
+            cv::Point(std::round(m_CameraCalibration.pt_RefDot.x/resizeFactor), std::round((m_CameraCalibration.pt_RefDot.y-15)/resizeFactor)) };
+        
+        if(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x >= threshold )    //its going right
+        {
+            m_Detection.text[0] = "Turn Left";
+        }
+        else if(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x <= (0-threshold) ) //its going left
+        {
+            m_Detection.text[0] = "Turn Right";
+        }
+        else if(std::abs(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x) < threshold )  
+        {
+            m_Detection.text[0] = "Go Straight";
+        }
+        return;
     }
-    else
-    {
-        m_Coordinates.push_back({0,0,0,0});
-        m_Coordinates.push_back({0,0,0,0});
-    }
+    m_Coordinates.coordinates[2] ={cv::Point(0,0),cv::Point(0,0)};
+    m_Coordinates.coordinates[3] ={cv::Point(0,0),cv::Point(0,0)};
 }
 
 void LaneProcessor::plotLane(cv::Mat& image, const std::vector<cv::Point>& lanePts, const float resizeFactor)
@@ -339,18 +360,18 @@ LaneProcessor::LaneProcessor(const CameraCalibration& camCal) :
     m_CameraCalibration{camCal},
     m_LeftFlag{false}, m_RightFlag{false}
 {   
-
+    this->m_Coordinates.coordinates = std::vector<std::vector<cv::Point>>(4);
+    this->m_Detection.text = std::vector<std::string>(1);
 }
 
-void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
+void LaneProcessor::setFrame(const IMessage* frame)
 {
     m_RightFlag = false;
     m_LeftFlag = false;
     m_MeasuredDot = cv::Point(); //reset all important variables
-    m_Coordinates.clear();
     
-    m_Frame = cv_bridge::toCvCopy(frame, "bgr8")->image.clone();
-    auto helpImage = m_Frame.clone();
+    m_Frame = *(static_cast<const ImageMessage*>(frame));
+    auto helpImage = m_Frame.image.clone();
     LaneProcessor::resize(helpImage, m_CameraCalibration.resizePercentage);
     cv::Mat forProcess = LaneProcessor::deNoise(helpImage);
     forProcess = LaneProcessor::edges(forProcess);
@@ -363,57 +384,11 @@ void LaneProcessor::setFrame(const sensor_msgs::Image& frame)
     auto lines = LaneProcessor::houghLines(forProcess);
     auto separatedLines = LaneProcessor::lineSeparation(helpImage, lines);
     auto regression = LaneProcessor::regression(helpImage, separatedLines);
-    LaneProcessor::setCoordinates(regression, m_CameraCalibration.resizePercentage);
+    LaneProcessor::setMessages(regression, m_CameraCalibration.resizePercentage);
     
-    LaneProcessor::plotLane(m_Frame, regression, m_CameraCalibration.resizePercentage);
+    LaneProcessor::plotLane(m_Frame.image, regression, m_CameraCalibration.resizePercentage);
 }
 
-sensor_msgs::Image LaneProcessor::getProcessedFrame(void) const
-{
-    cv_bridge::CvImagePtr cv_ptr(std::make_unique<cv_bridge::CvImage> () );
-    cv_ptr->encoding = "bgr8";
-	cv_ptr->image = m_Frame;
-	
-    sensor_msgs::Image img1;
-	cv_ptr->toImageMsg(img1);
-
-    return img1;
-}
-
-std::string LaneProcessor::getResult(void) const    
-{
-    /*
-    if(m_MeasuredDot == cv::Point() )
-    {
-        return "Changing the Lane";
-    }
-    */
-    if(!m_LeftFlag && !m_RightFlag)
-    {
-        return "There are no lines";
-    }
-    else if(!m_LeftFlag)
-    {
-        return "There's no Left line";
-    }
-    else if(!m_RightFlag)
-    {
-        return "There's no Right line";
-    }
-
-    if(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x >= threshold )    //its going right
-    {
-        return "Turn Left";
-    }
-    else if(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x <= (0-threshold) ) //its going left
-    {
-        return "Turn Right";
-    }
-    else if(std::abs(m_CameraCalibration.pt_RefDot.x - m_MeasuredDot.x) < threshold )  
-    {
-        return "Go Straight";
-    }
-}
 
 Topic LaneProcessor::getWatchdogTopic(void) const
 {
@@ -430,7 +405,19 @@ Topic LaneProcessor::getECUTopic(void) const
     return ECU_LaneDet;
 }
 
-std::vector<std::vector<int>> LaneProcessor::getCoordinates(void) const
+const IMessage* LaneProcessor::getCoordinateMessage(void) const
 {
-    return m_Coordinates;
+    return &m_Coordinates;
 }
+
+const IMessage* LaneProcessor::getProcFrameMessage(void) const
+{
+    return &m_Frame;
+}
+
+const IMessage* LaneProcessor::getDetectionMessage(void) const
+{
+    return &m_Detection;
+}
+
+
