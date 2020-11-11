@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC   -shared -Wl,-soname,lib_FramePub_myProject.so -o devel/lib/lib_FramePub_myProject.so CMakeFiles/_FramePub_myProject.dir/src/FramePublisher_NodeClass.cpp.o 

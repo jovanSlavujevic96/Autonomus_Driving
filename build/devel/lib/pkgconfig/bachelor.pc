@@ -1,8 +1,0 @@
-prefix=/home/rtrk/myROSworkspace/src/bachelor/build/devel
-
-Name: bachelor
-Description: Description of bachelor
-Version: 0.0.0
-Cflags: -I/home/rtrk/myROSworkspace/src/bachelor/include
-Libs: -L/home/rtrk/myROSworkspace/src/bachelor/build/devel/lib -lbachelorProject
-Requires: cv_bridge image_transport roscpp rospy sensor_msgs std_msgs
